@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Agent {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  password     String
+  role         String    @default("agent")
+  avatar       String?
+  status       String    @default("offline")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  refreshTokens RefreshToken[]
+  chats         Chat[]   @relation("AgentChats")
+  sessions      Session[]
+  passwordReset PasswordReset?
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Visitor {
+  id         String   @id @default(uuid())
+  name       String?
+  email      String?
+  status     String   @default("online")
+  metadata   String?
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  chats Chat[]
+}
+
+model Chat {
+  id          String    @id @default(uuid())
+  visitorId   String
+  visitor     Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  agentId     String?
+  agent       Agent?    @relation("AgentChats", fields: [agentId], references: [id])
+  status      String    @default("waiting")
+  subject     String?
+  tags        String    @default("")
+  unreadCount Int       @default(0)
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  messages Message[]
+
+  @@index([status])
+  @@index([agentId])
+  @@index([visitorId])
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  chatId     String
+  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId   String
+  senderType String
+  senderName String?
+  content    String    @default("")
+  status     String    @default("sent")
+  replyTo    String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  attachments Attachment[]
+  replyToMsg Message?  @relation("MessageReply", fields: [replyTo], references: [id])
+  replies    Message[] @relation("MessageReply")
+
+  @@index([chatId])
+  @@index([senderId])
+}
+
+model Attachment {
+  id           String   @id @default(uuid())
+  messageId    String
+  message      Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  url          String
+  thumbnailUrl String?
+  fileName     String
+  fileSize     Int
+  mimeType     String
+  type         String
+  duration     Int?
+  createdAt    DateTime @default(now())
+
+  @@index([messageId])
+}
+
+model AdminStats {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  totalVisitors     Int @default(0)
+  activeChats       Int @default(0)
+  closedChatsToday  Int @default(0)
+  onlineAgents      Int @default(0)
+  totalMessages     Int @default(0)
+  storageUsedMB     Float @default(0)
+  avgResponseTimeSec Int @default(0)
+  satisfactionRate  Int @default(0)
+
+  @@unique([date])
+}
+
+model OTP {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  otp       String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  agentId   String   @unique
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
