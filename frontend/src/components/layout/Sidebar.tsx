@@ -33,8 +33,8 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
     return () => el.removeEventListener("scroll", handleScroll);
   }, [scrollKey]);
 
-  // Live Chat - shown for client only (admin doesn't have it)
-  const primaryItems = isAdmin ? [] : [
+  // Live Chat - shown for both admin and agent
+  const primaryItems = [
     { id: "chats", label: "Live Chat", icon: MessageCircle, badge: "primary" as const },
   ];
 
@@ -42,6 +42,7 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
     { id: "overview", label: "Dashboard", icon: LayoutDashboard, section: "main" },
     { id: "notifications", label: "Notifications", icon: Bell, section: "main" },
     { id: "customers", label: "Customers", icon: Users, section: "main" },
+    { id: "follow-ups", label: "Follow-ups", icon: Clock, section: "main" },
     { id: "search", label: "Global Search", icon: Search, section: "tools" },
     { id: "analytics", label: "Analytics", icon: BarChart3, section: "tools" },
     { id: "settings", label: "Settings", icon: Settings, section: "system" },

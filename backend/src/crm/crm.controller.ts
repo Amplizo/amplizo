@@ -175,7 +175,7 @@ export class CrmController {
 
   // ===== FOLLOW-UPS =====
   @Get("followups")
-  @Roles("agent")
+  @Roles("agent", "admin")
   async listFollowUps(@Req() req: RequestWithUser, @Query() query: any) {
     return this.followUpService.findAll({
       ...this.actor(req),
@@ -188,49 +188,49 @@ export class CrmController {
   }
 
   @Get("followups/stats")
-  @Roles("agent")
+  @Roles("agent", "admin")
   async followUpStats(@Req() req: RequestWithUser) {
     return this.followUpService.getStats(req.user.id, req.user.role === "admin");
   }
 
-  @Get("followups/:id")
-  @Roles("agent")
-  async getFollowUp(@Req() req: RequestWithUser, @Param("id") id: string) {
-    return this.followUpService.findOne(id, req.user.id, req.user.role === "admin");
-  }
-
-  @Post("followups/:id/complete")
-  @Roles("agent")
-  async completeFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: any) {
-    return this.followUpService.complete(id, body?.notes, req.user.id, req.user.role === "admin");
-  }
-
-  @Post("followups/:id/skip")
-  @Roles("agent")
-  async skipFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: any) {
-    return this.followUpService.skip(id, body?.notes, req.user.id, req.user.role === "admin");
-  }
-
-  @Post("followups/:id/send-sms")
-  @Roles("agent")
-  async sendFollowUpSms(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { message?: string }) {
-    return this.followUpService.sendFollowUpSms(id, req.user.id, req.user.role === "admin", body?.message);
-  }
-
-  @Post("followups/:id/send")
-  @Roles("agent")
-  async sendFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { channel?: "whatsapp" | "sms" | "email" }) {
-    const result = await this.followUpService.sendFollowUp(id, req.user.id, req.user.role === "admin", body?.channel);
-    return result;
-  }
-
   @Get("followups/upcoming")
-  @Roles("agent")
+  @Roles("agent", "admin")
   async upcomingFollowUps(@Req() req: RequestWithUser) {
     return this.followUpService.findAll({
       ...this.actor(req),
       upcoming: true,
     });
+  }
+
+  @Get("followups/:id")
+  @Roles("agent", "admin")
+  async getFollowUp(@Req() req: RequestWithUser, @Param("id") id: string) {
+    return this.followUpService.findOne(id, req.user.id, req.user.role === "admin");
+  }
+
+  @Post("followups/:id/complete")
+  @Roles("agent", "admin")
+  async completeFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: any) {
+    return this.followUpService.complete(id, body?.notes, req.user.id, req.user.role === "admin");
+  }
+
+  @Post("followups/:id/skip")
+  @Roles("agent", "admin")
+  async skipFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: any) {
+    return this.followUpService.skip(id, body?.notes, req.user.id, req.user.role === "admin");
+  }
+
+  @Post("followups/:id/send-sms")
+  @Roles("agent", "admin")
+  async sendFollowUpSms(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { message?: string }) {
+    return this.followUpService.sendFollowUpSms(id, req.user.id, req.user.role === "admin", body?.message);
+  }
+
+  @Post("followups/:id/send")
+  @Roles("agent", "admin")
+  async sendFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { channel?: "whatsapp" | "sms" | "email" }) {
+    const result = await this.followUpService.sendFollowUp(id, req.user.id, req.user.role === "admin", body?.channel);
+    return result;
   }
 
   // ===== ASSIGNMENTS =====
@@ -256,7 +256,7 @@ export class CrmController {
 
   // ===== SCHEDULED CALLS =====
   @Post("crm/schedule-call")
-  @Roles("agent")
+  @Roles("agent", "admin")
   async scheduleCall(@Req() req: RequestWithUser, @Body() body: { clientId: string; scheduledDate: string; notes?: string }) {
     if (!body?.clientId || !body?.scheduledDate) {
       throw new BadRequestException("Customer and call date/time are required");
@@ -273,20 +273,20 @@ export class CrmController {
   }
 
   @Get("crm/scheduled-calls")
-  @Roles("agent")
+  @Roles("agent", "admin")
   async listScheduledCalls(@Req() req: RequestWithUser) {
     return this.scheduledCallService.findAll(req.user.id, req.user.role === "admin");
   }
 
   @Get("crm/scheduled-calls/stats")
-  @Roles("agent")
+  @Roles("agent", "admin")
   async scheduledCallStats(@Req() req: RequestWithUser) {
     return this.scheduledCallService.getStats(req.user.id, req.user.role === "admin");
   }
 
   // ===== EMAIL =====
   @Post("crm/send-email")
-  @Roles("agent")
+  @Roles("agent", "admin")
   async sendEmail(@Req() req: RequestWithUser, @Body() body: { clientId: string; subject: string; message: string }) {
     if (!body?.clientId || !body?.subject || !body?.message) {
       throw new BadRequestException("Customer, subject and message are required");

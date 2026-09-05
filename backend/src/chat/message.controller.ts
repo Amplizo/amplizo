@@ -27,7 +27,7 @@ export class MessageController {
 
   @Post("chats/:chatId/messages")
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles("agent")
+  @Roles("agent", "admin")
   async create(@Req() req: RequestWithUser, @Param("chatId") chatId: string, @Body() createMessageDto: CreateMessageDto) {
     return this.messageService.create(chatId, { content: createMessageDto.content, replyTo: createMessageDto.replyTo }, req.user.id, "agent");
   }

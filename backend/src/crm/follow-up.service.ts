@@ -257,7 +257,7 @@ export class FollowUpService {
     if (!isAdmin && followUp.assignedEmployeeId !== actorId) {
       throw new NotFoundException("Follow-up not found");
     }
-    if (followUp.status !== "PENDING") {
+    if (followUp.status !== "PENDING" && followUp.status !== "PROCESSING") {
       throw new BadRequestException(`Follow-up is already ${followUp.status.toLowerCase()}`);
     }
 
@@ -323,8 +323,27 @@ export class FollowUpService {
       const existing = await this.prisma.activityLog.findFirst({ where: { metadata: { contains: key } } });
       if (existing) continue;
 
-      const result = await this.sendFollowUp(fu.id, fu.assignedEmployeeId as string, true);
-      results.push({ followUpId: fu.id, ...result });
+      await this.prisma.followUp.update({
+        where: { id: fu.id },
+        data: { status: "PROCESSING" },
+      });
+
+      const current = await this.prisma.followUp.findUnique({ where: { id: fu.id } });
+      if (!current || current.status !== "PROCESSING") {
+        continue;
+      }
+
+      let result: any = { success: false, channel: "auto", error: "Unexpected error" };
+      try {
+        result = await this.sendFollowUp(fu.id, fu.assignedEmployeeId as string, true);
+        results.push({ followUpId: fu.id, ...result });
+      } catch (e: any) {
+        await this.prisma.followUp.update({
+          where: { id: fu.id },
+          data: { status: "FAILED", error: e?.message || "Unexpected error" },
+        });
+        result = { success: false, channel: "auto", error: e?.message || "Unexpected error" };
+      }
 
       await this.activityLog.log({
         clientId: fu.clientId,
