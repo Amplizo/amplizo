@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Shield, Lock, Database, Smartphone, FileText, Users, UserCheck, Key, Eye, EyeOff, CheckCircle2, XCircle, AlertTriangle, Settings, RefreshCw, Download, Trash2, Bell } from "lucide-react";
 
 const securityFeatures = [
@@ -49,6 +50,7 @@ export default function SecurityPage() {
 
   return (
     <DashboardLayout title="Security" subtitle="Encryption, backups, audit logs, and access control">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Security Score */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Award, Wallet, Star, Gift, Users, TrendingUp, ArrowUpRight, Plus, Gift as GiftIcon, Copy, CheckCircle2 } from "lucide-react";
 
 const mockMembershipTiers = [
@@ -46,6 +47,7 @@ export default function LoyaltyPage() {
 
   return (
     <DashboardLayout title="Loyalty & Rewards" subtitle="Membership tiers, wallet, and referral program">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Building2, MapPin, Users, TrendingUp, IndianRupee, ArrowUpRight, ArrowDownRight, Eye, Plus, Search, Filter, MoreVertical, Star, ChevronRight } from "lucide-react";
 
 const mockBranches = [
@@ -26,6 +27,7 @@ export default function BranchesPage() {
 
   return (
     <DashboardLayout title="Multi Branch" subtitle="Manage 100+ stores from one dashboard">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

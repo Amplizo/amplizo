@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { useAuthStore } from "@/store";
 import { User, Mail, Shield, Calendar, Activity } from "lucide-react";
 
@@ -20,6 +21,7 @@ export default function AccountPage() {
   return (
     <DashboardLayout title="My Account" subtitle="Your profile and subscription details">
       <div className="max-w-2xl space-y-6">
+        <BackButton fallback={agent?.role === "admin" ? "/dashboard" : "/client-dashboard"} />
         {/* Profile Card */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center gap-4 mb-6">

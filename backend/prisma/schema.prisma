@@ -36,6 +36,7 @@ model Agent {
   whatsAppPhoneAssignments WhatsAppPhoneAssignment[] @relation("WhatsAppPhoneAssignments")
   assignmentsReceived CustomerAssignment[] @relation("AssignmentEmployee")
   scheduledCalls   ScheduledCall[]
+  sentFollowUps    FollowUp[] @relation("FollowUpSender")
 }
 
 model RefreshToken {
@@ -269,6 +270,10 @@ model FollowUp {
   completedAt         DateTime?
   completedById       String?
   completedBy         Agent?   @relation("FollowUpCompleter", fields: [completedById], references: [id])
+  sentAt              DateTime?
+  sentById            String?
+  sentBy              Agent?   @relation("FollowUpSender", fields: [sentById], references: [id])
+  error               String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

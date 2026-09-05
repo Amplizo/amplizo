@@ -325,13 +325,18 @@ class ApiService {
   }
 
   // ===== CRM: Follow-ups =====
-  async getFollowUps(params?: { status?: string; today?: boolean; overdue?: boolean; clientId?: string; employeeId?: string }) {
+  async getFollowUps(params?: { status?: string; today?: boolean; overdue?: boolean; upcoming?: boolean; clientId?: string; employeeId?: string }) {
     const { data } = await this.client.get("/followups", { params });
     return data;
   }
 
   async getFollowUpStats() {
     const { data } = await this.client.get("/followups/stats");
+    return data;
+  }
+
+  async getFollowUp(id: string) {
+    const { data } = await this.client.get(`/followups/${id}`);
     return data;
   }
 
@@ -342,6 +347,16 @@ class ApiService {
 
   async skipFollowUp(id: string, notes?: string) {
     const { data } = await this.client.post(`/followups/${id}/skip`, { notes });
+    return data;
+  }
+
+  async sendFollowUp(id: string, channel?: "whatsapp" | "sms" | "email") {
+    const { data } = await this.client.post(`/followups/${id}/send`, { channel });
+    return data;
+  }
+
+  async getUpcomingFollowUps() {
+    const { data } = await this.client.get("/followups/upcoming");
     return data;
   }
 

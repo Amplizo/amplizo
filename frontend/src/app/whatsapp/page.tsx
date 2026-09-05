@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { MessageSquare, Send, CheckCheck, Check, Reply, Bot, Plus, Search, Filter, MoreVertical, Eye, Play, Clock, Users, TrendingUp, Zap, ArrowUpRight, ArrowDownRight, X, Mail, Phone, RefreshCw } from "lucide-react";
 
 const mockWhatsAppStats = [
@@ -59,6 +60,7 @@ export default function WhatsAppPage() {
 
   return (
     <DashboardLayout title="WhatsApp Automation" subtitle="Manage broadcasts, templates, and AI replies">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

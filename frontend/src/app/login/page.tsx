@@ -31,7 +31,14 @@ export default function LoginPage() {
     try {
       const data = await api.login(email, password);
       setAuth(data.agent, data.token, data.refreshToken);
-      router.push("/dashboard");
+      // Also set cookie for middleware auth check
+      if (typeof document !== "undefined") {
+        document.cookie = `amplizo_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+        document.cookie = `amplizo_role=${data.agent?.role || "agent"}; path=/; max-age=86400; SameSite=Lax`;
+      }
+      const role = data.agent?.role;
+      if (role === "admin") router.push("/dashboard");
+      else router.push("/client-dashboard");
     } catch (err: any) { setError(err.response?.data?.message || "Invalid email or password"); }
     finally { setIsLoading(false); }
   };
@@ -66,7 +73,13 @@ export default function LoginPage() {
       const data = await res.json();
       if (data.token) {
         setAuth(data.agent, data.token, data.refreshToken);
-        router.push("/dashboard");
+        if (typeof document !== "undefined") {
+          document.cookie = `amplizo_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+          document.cookie = `amplizo_role=${data.agent?.role || "agent"}; path=/; max-age=86400; SameSite=Lax`;
+        }
+        const role = data.agent?.role;
+        if (role === "admin") router.push("/dashboard");
+        else router.push("/client-dashboard");
       } else { setError(data.message || "Invalid OTP"); }
     } catch { setError("Failed to verify OTP"); }
     finally { setIsLoading(false); }
@@ -84,7 +97,13 @@ export default function LoginPage() {
       const data = await res.json();
       if (data.token) {
         setAuth(data.agent, data.token, data.refreshToken);
-        router.push("/dashboard");
+        if (typeof document !== "undefined") {
+          document.cookie = `amplizo_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+          document.cookie = `amplizo_role=${data.agent?.role || "agent"}; path=/; max-age=86400; SameSite=Lax`;
+        }
+        const role = data.agent?.role;
+        if (role === "admin") router.push("/dashboard");
+        else router.push("/client-dashboard");
       } else { setError(data.message || "Login failed"); }
     } catch { setError("Login failed"); }
     finally { setIsLoading(false); }
@@ -95,17 +114,32 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-1/2 bg-brand-600 relative overflow-hidden items-center justify-center p-12">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-600 to-brand-800" />
         <div className="relative z-10 text-white max-w-md">
-          <div className="flex items-center gap-3 mb-8"><div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center"><Zap className="w-6 h-6" /></div><span className="text-2xl font-bold">Amplizo</span></div>
+          <div className="flex items-center gap-3 mb-8">
+            <img src="/logo.png" alt="Amplizo" className="h-14 w-14 object-contain" />
+            <span className="text-2xl font-bold tracking-tight">Amplizo</span>
+          </div>
           <h2 className="text-4xl font-bold leading-tight mb-4">The AI Employee Every Business Needs</h2>
           <p className="text-brand-100 text-lg leading-relaxed mb-8">Join 2,847+ businesses using AI to handle customer calls, follow-ups, sales, and retention — autonomously.</p>
           <div className="space-y-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><span className="text-sm">✓</span></div><span>14-day free trial, no credit card</span></div><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><span className="text-sm">✓</span></div><span>AI agents working 24/7/365</span></div><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><span className="text-sm">✓</span></div><span>Your data, your infrastructure</span></div></div>
-          <div className="mt-12 pt-8 border-t border-white/20"><p className="text-sm text-brand-200">Trusted by businesses across India</p><div className="flex gap-4 mt-4 opacity-70"><span className="text-xs bg-white/10 px-3 py-1 rounded-full">Salons</span><span className="text-xs bg-white/10 px-3 py-1 rounded-full">Clinics</span><span className="text-xs bg-white/10 px-3 py-1 rounded-full">E-commerce</span><span className="text-xs bg-white/10 px-3 py-1 rounded-full">Real Estate</span><span className="text-xs bg-white/10 px-3 py-1 rounded-full">Education</span></div></div>
+          <div className="mt-12 pt-8 border-t border-white/20">
+            <p className="text-xs font-semibold text-brand-200 uppercase tracking-wider mb-4">Trusted by businesses across India</p>
+            <div className="flex flex-wrap gap-2.5">
+              <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-medium text-white bg-white/10 border border-white/15 backdrop-blur-sm whitespace-nowrap">Salons</span>
+              <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-medium text-white bg-white/10 border border-white/15 backdrop-blur-sm whitespace-nowrap">Clinics</span>
+              <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-medium text-white bg-white/10 border border-white/15 backdrop-blur-sm whitespace-nowrap">E-commerce</span>
+              <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-medium text-white bg-white/10 border border-white/15 backdrop-blur-sm whitespace-nowrap">Real Estate</span>
+              <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-medium text-white bg-white/10 border border-white/15 backdrop-blur-sm whitespace-nowrap">Education</span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8"><div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center"><Zap className="w-5 h-5 text-white" /></div><span className="font-bold text-gray-900 dark:text-gray-100">Amplizo</span></div>
+           <div className="lg:hidden flex items-center gap-3 mb-8">
+             <img src="/logo.png" alt="Amplizo" className="h-10 w-10 object-contain" />
+             <span className="font-bold text-gray-900 dark:text-gray-100 tracking-tight">Amplizo</span>
+           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome back</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 mb-8">Sign in to your agent dashboard</p>
 

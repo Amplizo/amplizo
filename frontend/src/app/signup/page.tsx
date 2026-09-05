@@ -63,7 +63,10 @@ export default function SignupPage() {
 
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8"><div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center"><Zap className="w-5 h-5 text-white" /></div><span className="font-bold text-gray-900 dark:text-gray-100">Amplizo</span></div>
+           <div className="lg:hidden flex items-center gap-3 mb-8">
+             <img src="/logo.png" alt="Amplizo" className="h-10 w-10 object-contain" />
+             <span className="font-bold text-gray-900 dark:text-gray-100 tracking-tight">Amplizo</span>
+           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create your account</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 mb-8">Start your 14-day free trial</p>
 

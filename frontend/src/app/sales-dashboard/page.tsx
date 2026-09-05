@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { TrendingUp, TrendingDown, DollarSign, Target, BarChart3, Users, ShoppingCart, Repeat, Award, ArrowUpRight, ArrowDownRight, Calendar, Filter } from "lucide-react";
 
 const monthlyData = [
@@ -40,6 +41,7 @@ export default function SalesDashboardPage() {
 
   return (
     <DashboardLayout title="Sales Dashboard" subtitle="Revenue, profit, growth, and conversion analytics">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -47,6 +47,19 @@ export interface Chat {
   id: string;
   visitorId: string;
   visitor: Visitor;
+  clientId?: string;
+  client?: {
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    city?: string;
+    currentLeadStatus?: string;
+    plan?: string;
+    status?: string;
+    totalSpent?: number;
+    purchaseCount?: number;
+  };
   agentId?: string;
   agent?: Agent;
   status: "waiting" | "active" | "closed";
@@ -57,6 +70,7 @@ export interface Chat {
   closedAt?: string;
   createdAt: string;
   updatedAt: string;
+  conversationState?: string;
 }
 
 export interface TypingEvent {

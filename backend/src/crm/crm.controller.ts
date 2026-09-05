@@ -217,6 +217,22 @@ export class CrmController {
     return this.followUpService.sendFollowUpSms(id, req.user.id, req.user.role === "admin", body?.message);
   }
 
+  @Post("followups/:id/send")
+  @Roles("agent")
+  async sendFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { channel?: "whatsapp" | "sms" | "email" }) {
+    const result = await this.followUpService.sendFollowUp(id, req.user.id, req.user.role === "admin", body?.channel);
+    return result;
+  }
+
+  @Get("followups/upcoming")
+  @Roles("agent")
+  async upcomingFollowUps(@Req() req: RequestWithUser) {
+    return this.followUpService.findAll({
+      ...this.actor(req),
+      upcoming: true,
+    });
+  }
+
   // ===== ASSIGNMENTS =====
   @Post("customers/:id/assign")
   async assign(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: any) {

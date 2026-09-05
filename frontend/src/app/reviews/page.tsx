@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Star, ThumbsUp, ThumbsDown, RefreshCw, Plus, Search, Filter, MoreVertical, Eye, Send, AlertTriangle, MessageSquare, Globe, Facebook, ArrowRight, CheckCircle2 } from "lucide-react";
 
 const mockGoogleReviews = [
@@ -35,6 +36,7 @@ export default function ReviewsPage() {
 
   return (
     <DashboardLayout title="Review Manager" subtitle="Monitor and manage customer reviews across platforms">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -1,55 +1,78 @@
 "use client";
-import React from "react";
-import { LayoutDashboard, MessageCircle, User, LogOut, Zap, Users, CreditCard, Bot, Brain, Cpu, BarChart3, MessageSquare, Clock, Package, IndianRupee, Award, UserCheck, TrendingUp, Settings, ShoppingCart, FileText, Star, Shield, Building2, Smartphone, Globe } from "lucide-react";
+import React, { useRef, useLayoutEffect, useState } from "react";
+import { LayoutDashboard, MessageCircle, Users, Clock, UserCog, Settings, User, Search, BarChart3, Bell, FileUp, FileDown, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { LogOut } from "lucide-react";
 
 interface SidebarProps { activeRoute: string; onNavigate: (route: string) => void; }
 
 export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
   const { logout, agent } = useAuthStore();
   const isAdmin = agent?.role === "admin";
+  const navRef = useRef<HTMLElement>(null);
+  const scrollKey = isAdmin ? "amplizo-admin-sidebar-scroll" : "amplizo-client-sidebar-scroll";
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useLayoutEffect(() => {
+    const saved = sessionStorage.getItem(scrollKey);
+    if (saved && navRef.current) {
+      navRef.current.scrollTop = parseInt(saved, 10);
+    }
+  }, [scrollKey]);
+
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      sessionStorage.setItem(scrollKey, String(el.scrollTop));
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [scrollKey]);
+
+  // Live Chat - shown for client only (admin doesn't have it)
+  const primaryItems = isAdmin ? [] : [
+    { id: "chats", label: "Live Chat", icon: MessageCircle, badge: "primary" as const },
+  ];
 
   const adminNavItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, section: "main" },
-    { id: "chats", label: "Chats", icon: MessageCircle, section: "main" },
-    { id: "clients", label: "Clients", icon: Users, section: "main" },
-    { id: "subscriptions", label: "Subscriptions", icon: CreditCard, section: "main" },
-    { id: "account", label: "My Account", icon: User, section: "account" },
+    { id: "overview", label: "Dashboard", icon: LayoutDashboard, section: "main" },
+    { id: "notifications", label: "Notifications", icon: Bell, section: "main" },
+    { id: "customers", label: "Customers", icon: Users, section: "main" },
+    { id: "search", label: "Global Search", icon: Search, section: "tools" },
+    { id: "analytics", label: "Analytics", icon: BarChart3, section: "tools" },
+    { id: "settings", label: "Settings", icon: Settings, section: "system" },
+    { id: "profile", label: "Profile", icon: User, section: "system" },
   ];
 
   const clientNavItems = [
-    { id: "client-dashboard", label: "Dashboard", icon: LayoutDashboard, section: "overview" },
-    { id: "ai-employees", label: "AI Employees", icon: Bot, section: "overview" },
-    { id: "ai-brain", label: "AI Customer Brain", icon: Brain, section: "overview" },
-    { id: "ai-decisions", label: "AI Decisions", icon: Cpu, section: "overview" },
-    { id: "ai-predictions", label: "AI Predictions", icon: TrendingUp, section: "overview" },
-    { id: "chats", label: "Live Chats", icon: MessageCircle, section: "communication" },
-    { id: "whatsapp", label: "WhatsApp Automation", icon: MessageSquare, section: "communication" },
-    { id: "crm", label: "Smart CRM", icon: Users, section: "sales" },
-    { id: "leads", label: "Lead Management", icon: UserCheck, section: "sales" },
-    { id: "timeline", label: "Customer Timeline", icon: Clock, section: "sales" },
-    { id: "sales-dashboard", label: "Sales Dashboard", icon: BarChart3, section: "sales" },
-    { id: "inventory", label: "Inventory", icon: Package, section: "business" },
-    { id: "billing", label: "Billing & Invoices", icon: IndianRupee, section: "business" },
-    { id: "loyalty", label: "Loyalty & Rewards", icon: Award, section: "business" },
-    { id: "reviews", label: "Review Manager", icon: Star, section: "business" },
-    { id: "employees", label: "Employees", icon: Users, section: "business" },
-    { id: "branches", label: "Multi Branch", icon: Building2, section: "business" },
-    { id: "integrations", label: "Integrations", icon: Globe, section: "settings" },
-    { id: "security", label: "Security", icon: Shield, section: "settings" },
-    { id: "account", label: "Subscription", icon: CreditCard, section: "settings" },
+    { id: "client-dashboard", label: "Dashboard", icon: LayoutDashboard, section: "main" },
+    { id: "customers", label: "Customers", icon: Users, section: "main" },
+    { id: "follow-ups", label: "Follow-ups", icon: Clock, section: "main" },
+    { id: "data-import", label: "Data Import", icon: FileUp, section: "tools" },
+    { id: "data-export", label: "Data Export", icon: FileDown, section: "tools" },
+    { id: "subscription", label: "Subscription", icon: CreditCard, section: "system" },
+    { id: "settings", label: "Settings", icon: Settings, section: "system" },
+    { id: "profile", label: "Profile", icon: User, section: "system" },
   ];
 
-  const sections = [
-    { id: "overview", label: "AI Overview" },
-    { id: "communication", label: "Communication" },
-    { id: "sales", label: "Sales & CRM" },
-    { id: "business", label: "Business Tools" },
-    { id: "settings", label: "Settings" },
+  const adminSections = [
+    { id: "main", label: "MAIN" },
+    { id: "tools", label: "TOOLS" },
+    { id: "system", label: "SYSTEM" },
+  ];
+
+  const clientSections = [
+    { id: "main", label: "MAIN" },
+    { id: "tools", label: "TOOLS" },
+    { id: "system", label: "SYSTEM" },
   ];
 
   const navItems = isAdmin ? adminNavItems : clientNavItems;
+  const sections = isAdmin ? adminSections : clientSections;
 
   const groupedItems = sections.map(section => ({
     ...section,
@@ -57,20 +80,44 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
   })).filter(section => section.items.length > 0);
 
   return (
-    <aside className="flex flex-col w-72 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-y-auto">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-          <Zap className="w-5 h-5 text-white" />
-        </div>
+    <aside className="flex flex-col w-72 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-screen sticky top-0 overflow-hidden">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <img src="/logo.png" alt="Amplizo" className="h-10 w-10 object-contain shrink-0" />
         <div>
-          <h1 className="font-bold text-gray-900 dark:text-gray-100">Amplizo</h1>
+          <h1 className="font-bold text-gray-900 dark:text-gray-100 tracking-tight">Amplizo</h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {isAdmin ? "Admin Panel" : "AI Platform"}
           </p>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4">
+      <nav ref={navRef} className="flex-1 px-3 py-4 overflow-y-auto">
+        {/* Live Chat - shown for client only (admin doesn't have it) */}
+        {primaryItems.length > 0 && (
+          <div className="mb-4">
+            {primaryItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeRoute === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onNavigate(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.98]",
+                    isActive
+                      ? "bg-gradient-to-r from-[#0A66FF] to-[#00C6FF] text-white shadow-sm"
+                      : "bg-blue-50 dark:bg-blue-900/20 text-[#0A66FF] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                  )}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {isActive && <span className="h-2 w-2 rounded-full bg-white" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {groupedItems.map((section) => (
           <div key={section.id} className="mb-4">
             <p className="px-3 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
@@ -85,20 +132,15 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
                     key={item.id}
                     onClick={() => onNavigate(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.98]",
                       isActive
-                        ? "bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                        ? "bg-[#0A66FF] text-white shadow-sm hover:bg-[#0952CC]"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
                     )}
                   >
-                    <Icon className={cn("w-4 h-4", isActive && "text-brand-600 dark:text-brand-400")} />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {item.id === "ai-employees" && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">6</span>
-                    )}
-                    {item.id === "ai-brain" && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full">AI</span>
-                    )}
+                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-white" : "")} />
+                    <span className="flex-1 text-left truncate">{item.label}</span>
+                    {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white shrink-0" />}
                   </button>
                 );
               })}
@@ -107,15 +149,36 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
         <button
-          onClick={() => { logout(); window.location.href = "/login"; }}
+          onClick={() => setShowLogoutDialog(true)}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
           <LogOut className="w-4 h-4" />
           <span>Logout</span>
         </button>
       </div>
+
+      <ConfirmDialog
+        isOpen={showLogoutDialog}
+        title="Logout"
+        message="Are you sure you want to logout?"
+        confirmText="Logout"
+        cancelText="Cancel"
+        isLoading={isLoggingOut}
+        onConfirm={async () => {
+          setIsLoggingOut(true);
+          try {
+            await logout();
+            if (typeof window !== "undefined") {
+              window.location.href = "/login";
+            }
+          } finally {
+            setIsLoggingOut(false);
+          }
+        }}
+        onCancel={() => setShowLogoutDialog(false)}
+      />
     </aside>
   );
 }

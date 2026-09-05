@@ -25,16 +25,21 @@ function AuthCallbackContent() {
     }
 
     if (token && refreshToken) {
-      let agent = { id: "", name: "User", email: "", role: "agent" as const, status: "online" as const, createdAt: new Date().toISOString() };
+      let agent: any = { id: "", name: "User", email: "", role: "agent", status: "online", createdAt: new Date().toISOString() };
       if (agentParam) {
         try {
           agent = JSON.parse(decodeURIComponent(agentParam));
         } catch {}
       }
       setAuth(agent, token, refreshToken);
+      if (typeof document !== "undefined") {
+        document.cookie = `amplizo_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+        document.cookie = `amplizo_role=${agent?.role || "agent"}; path=/; max-age=86400; SameSite=Lax`;
+      }
       setStatus("success");
       setMessage("Sign in successful! Redirecting...");
-      setTimeout(() => router.push("/dashboard"), 1500);
+      const role = agent?.role;
+      setTimeout(() => router.push(role === "admin" ? "/dashboard" : "/client-dashboard"), 1500);
     } else {
       setStatus("error");
       setMessage("Invalid authentication response");

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from "@nestjs/common";
 import { AdminService } from "./admin.service";
 import { JwtAuthGuard } from "../auth/jwt.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
@@ -25,4 +25,122 @@ export class AdminController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get admin dashboard statistics" })
   async getStats() { return this.adminService.getStats(); }
+
+  @Get("admin/clients")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get all clients" })
+  async getClients(@Query("search") search?: string) {
+    const where = search ? {
+      OR: [
+        { name: { contains: search } },
+        { email: { contains: search } },
+        { city: { contains: search } },
+      ],
+    } : {};
+    return this.prisma.client.findMany({ where, orderBy: { createdAt: "desc" } });
+  }
+
+  @Get("admin/clients/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get client by ID" })
+  async getClient(@Param("id") id: string) {
+    return this.prisma.client.findUnique({ where: { id } });
+  }
+
+  @Post("admin/clients")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Create new client" })
+  async createClient(@Body() body: { name: string; email: string; phone?: string; city?: string; plan?: string; status?: string }) {
+    return this.prisma.client.create({
+      data: {
+        name: body.name,
+        email: body.email,
+        phone: body.phone,
+        city: body.city,
+        plan: body.plan || "Starter",
+        status: body.status || "Active",
+      },
+    });
+  }
+
+  @Put("admin/clients/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Update client" })
+  async updateClient(@Param("id") id: string, @Body() body: { name?: string; email?: string; phone?: string; city?: string; plan?: string; status?: string }) {
+    return this.prisma.client.update({
+      where: { id },
+      data: body,
+    });
+  }
+
+  @Delete("admin/clients/:id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Delete client" })
+  async deleteClient(@Param("id") id: string) {
+    return this.prisma.client.delete({ where: { id } });
+  }
+
+  @Get("search")
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Search clients, chats and visitors (accessible to all authenticated users)" })
+  async publicSearch(@Query("q") query: string) {
+    if (!query || query.length < 2) return { clients: [], chats: [], visitors: [] };
+
+    const searchTerm = query.toLowerCase();
+    const clientWhere = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }, { city: { contains: searchTerm } }, { phone: { contains: searchTerm } }] };
+    const chatWhere = { OR: [{ subject: { contains: searchTerm } }, { tags: { contains: searchTerm } }] };
+    const visitorWhere = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }] };
+
+    const [clients, chats, visitors] = await Promise.all([
+      this.prisma.client.findMany({ where: clientWhere, take: 5, orderBy: { createdAt: "desc" } }),
+      this.prisma.chat.findMany({ where: chatWhere, take: 5, orderBy: { updatedAt: "desc" }, include: { visitor: true } }),
+      this.prisma.visitor.findMany({ where: visitorWhere, take: 5, orderBy: { lastSeenAt: "desc" } }),
+    ]);
+
+    return {
+      clients: clients.map((c: { id: any; name: any; email: any; plan: any; status: any }) => ({ id: c.id, type: "client", title: c.name, subtitle: c.email, badge: c.plan, status: c.status })),
+      chats: chats.map((c: { id: any; subject: any; status: any; visitor: any }) => ({ id: c.id, type: "chat", title: c.subject || `Chat #${c.id.slice(0, 8)}`, subtitle: `Status: ${c.status}`, badge: c.status, visitorName: c.visitor?.name, visitorEmail: c.visitor?.email })),
+      visitors: visitors.map((v: { id: any; name: any; email: any; status: any }) => ({ id: v.id, type: "visitor", title: v.name || "Anonymous", subtitle: v.email || "No email", badge: v.status })),
+    };
+  }
+
+  @Get("admin/search")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Global search across clients, agents, chats (admin only)" })
+  async globalSearch(@Query("q") query: string) {
+    if (!query || query.length < 2) return { clients: [], agents: [], chats: [], visitors: [] };
+
+    const searchTerm = query.toLowerCase();
+    const clientWhere = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }, { city: { contains: searchTerm } }, { phone: { contains: searchTerm } }] };
+    const agentWhere = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }] };
+    const chatWhere = { OR: [{ subject: { contains: searchTerm } }, { tags: { contains: searchTerm } }] };
+    const visitorWhere = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }] };
+
+    const [clients, agents, chats, visitors] = await Promise.all([
+      this.prisma.client.findMany({ where: clientWhere, take: 5, orderBy: { createdAt: "desc" } }),
+      this.prisma.agent.findMany({ where: agentWhere, take: 5, orderBy: { createdAt: "desc" } }),
+      this.prisma.chat.findMany({ where: chatWhere, take: 5, orderBy: { createdAt: "desc" } }),
+      this.prisma.visitor.findMany({ where: visitorWhere, take: 5, orderBy: { lastSeenAt: "desc" } }),
+    ]);
+
+    return {
+      clients: clients.map((c: { id: any; name: any; email: any; plan: any; status: any }) => ({ id: c.id, type: "client", title: c.name, subtitle: c.email, badge: c.plan, status: c.status })),
+      agents: agents.map((a: { id: any; name: any; email: any; role: any; status: any }) => ({ id: a.id, type: "agent", title: a.name, subtitle: a.email, badge: a.role, status: a.status })),
+      chats: chats.map((c: { id: any; subject: any; status: any }) => ({ id: c.id, type: "chat", title: c.subject || `Chat #${c.id.slice(0, 8)}`, subtitle: `Status: ${c.status}`, badge: c.status })),
+      visitors: visitors.map((v: { id: any; name: any; email: any; status: any }) => ({ id: v.id, type: "visitor", title: v.name || "Anonymous", subtitle: v.email || "No email", badge: v.status })),
+    };
+  }
 }

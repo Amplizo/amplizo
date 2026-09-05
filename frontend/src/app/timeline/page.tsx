@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Clock, ShoppingBag, Phone, MessageSquare, AlertTriangle, Ticket, Star, ChevronRight, Filter, Search, Calendar } from "lucide-react";
 
 const mockCustomers = [
@@ -77,6 +78,7 @@ export default function TimelinePage() {
 
   return (
     <DashboardLayout title="Customer Timeline" subtitle="View complete customer journey and interactions">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Customer Selector */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">

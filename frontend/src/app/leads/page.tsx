@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Flame, Snowflake, Crown, TrendingUp, UserX, RefreshCw, Ban, AlertTriangle, Star, ArrowUp, ArrowDown, Plus, Search, Filter, MoreVertical, Eye, Mail, Phone, MapPin, Users, Target } from "lucide-react";
 
 const leadCategories = [
@@ -62,6 +63,7 @@ export default function LeadsPage() {
 
   return (
     <DashboardLayout title="Lead Management" subtitle="AI-powered lead scoring and categorization">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* AI Categories */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">

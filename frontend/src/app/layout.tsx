@@ -28,6 +28,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#4f46e5" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('amplizo-ui');
+                  var darkMode = false;
+                  if (saved) {
+                    var parsed = JSON.parse(saved);
+                    darkMode = parsed.state && parsed.state.darkMode;
+                  }
+                  if (!darkMode) {
+                    darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  }
+                  if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "SoftwareApplication", name: "Amplizo", applicationCategory: "BusinessApplication", operatingSystem: "Web", description: "AI-powered independent live chat platform for businesses", offers: { "@type": "AggregateOffer", priceCurrency: "INR", lowPrice: "999", highPrice: "7999", offerCount: "3" }, aggregateRating: { "@type": "AggregateRating", ratingValue: "4.8", ratingCount: "2847" } }) }} />
       </head>
       <body className={inter.className}>

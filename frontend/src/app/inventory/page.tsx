@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Package, AlertTriangle, XCircle, Clock, Zap, Plus, Search, Filter, MoreVertical, Eye, Trash2, RefreshCw, Brain, TrendingUp, TrendingDown } from "lucide-react";
 
 const mockProducts = [
@@ -48,6 +49,7 @@ export default function InventoryPage() {
 
   return (
     <DashboardLayout title="Inventory Management" subtitle="Track stock levels, alerts, and AI suggestions">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Alert Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

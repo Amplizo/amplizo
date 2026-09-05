@@ -1,19 +1,34 @@
 "use client";
-import React, { useState } from "react";
-import { Search, MessageCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, MessageCircle, Plus } from "lucide-react";
 import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { ChatListItem } from "@/components/chat/ChatListItem";
 import { Separator } from "@/components/ui/Separator";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store";
+import api from "@/lib/api";
 import type { Chat } from "@/lib/types";
 
 type FilterType = "all" | "waiting" | "active" | "closed";
 
-export function ChatList() {
+export function ChatList({ onNewChat }: { onNewChat?: () => void }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
-  const { chats, activeChat, setActiveChat, clearUnread } = useChatStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const { chats, setChats, activeChat, setActiveChat, clearUnread } = useChatStore();
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await api.getChats();
+        if (mounted && Array.isArray(data)) setChats(data);
+      } catch (e) { console.error("Failed to load chats:", e); }
+      finally { if (mounted) setIsLoading(false); }
+    })();
+    return () => { mounted = false; };
+  }, [setChats]);
 
   const filteredChats = chats.filter((chat) => {
     const matchesFilter = filter === "all" || chat.status === filter;
@@ -29,7 +44,14 @@ export function ChatList() {
       <div className="p-4 space-y-3 shrink-0">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Chats</h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{chats.filter((c) => c.status !== "closed").length} active</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">{chats.filter((c) => c.status !== "closed").length} active</span>
+            {onNewChat && (
+              <Button size="icon" variant="primary" onClick={onNewChat} title="New Chat">
+                <Plus className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
         <Input placeholder="Search chats..." value={search} onChange={(e) => setSearch(e.target.value)} icon={<Search className="w-4 h-4" />} />
         <div className="flex gap-1 overflow-x-auto pb-1">
@@ -42,7 +64,9 @@ export function ChatList() {
       </div>
       <Separator />
       <div className="flex-1 overflow-y-auto p-2 scrollbar-thin">
-        {filteredChats.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12"><div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" /></div>
+        ) : filteredChats.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4"><MessageCircle className="w-8 h-8 text-gray-400" /></div>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No chats found</p>

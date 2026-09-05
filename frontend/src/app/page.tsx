@@ -1,161 +1,515 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { VisitorWidget } from "@/components/chat/VisitorWidget";
-import { Zap, MessageCircle, Shield, Globe, Smartphone, Users, BarChart3, Clock, CheckCircle2, ArrowRight, Star, Play, Phone, Mail, Bot, Brain, Target, Rocket } from "lucide-react";
+import {
+  Zap, MessageCircle, Shield, Globe, Smartphone, Users, BarChart3, Clock,
+  CheckCircle2, ArrowRight, Star, Play, Phone, Mail, Bot, Brain, Target, Rocket,
+  Menu, X, Headphones, TrendingUp, Award, ChevronRight
+} from "lucide-react";
 
-const features = [
-  { icon: <MessageCircle className="w-6 h-6" />, title: "Real-Time Messaging", description: "Send text, images, videos, and audio messages instantly with delivery and read receipts. See typing indicators and online status." },
-  { icon: <Shield className="w-6 h-6" />, title: "Enterprise Security", description: "JWT authentication, Argon2 hashing, AES-256 encryption, TLS 1.3, and row-level tenant isolation. Your data never leaks." },
-  { icon: <Globe className="w-6 h-6" />, title: "100% Independent", description: "No reliance on WhatsApp, Telegram, or any third party. Your infrastructure, your rules, your data. Hosted on your servers." },
-  { icon: <Smartphone className="w-6 h-6" />, title: "Fully Responsive", description: "Works perfectly on desktop, tablet, and mobile. No app download required for visitors — chat directly in the browser." },
-  { icon: <Zap className="w-6 h-6" />, title: "Voice Messages", description: "Record and send voice notes directly from the browser using MediaRecorder API. No plugins needed." },
-  { icon: <Users className="w-6 h-6" />, title: "Multi-Agent Support", description: "Add unlimited agents with role-based access control. Assign chats automatically or let agents pick their own." },
-  { icon: <BarChart3 className="w-6 h-6" />, title: "Smart Analytics", description: "Real-time metrics on visitors, chat volume, response times, agent performance, and customer satisfaction." },
-  { icon: <Clock className="w-6 h-6" />, title: "Automated Follow-ups", description: "Triggered messages based on customer behavior — birthday wishes, payment reminders, and feedback requests." },
-  { icon: <CheckCircle2 className="w-6 h-6" />, title: "File Sharing", description: "Share images, documents, and videos up to 50MB. All files are scanned for viruses before delivery." },
-  { icon: <Phone className="w-6 h-6" />, title: "AI Voice Calls", description: "Handle incoming calls with AI Receptionist. Books appointments, answers FAQs, and routes complex calls to humans." },
-  { icon: <Mail className="w-6 h-6" />, title: "Email Integration", description: "Send chat transcripts, follow-up emails, and marketing campaigns. Sync with your existing email provider." },
-  { icon: <Bot className="w-6 h-6" />, title: "Custom AI Training", description: "Train your AI agent on your business data — products, services, pricing. It learns your voice and style." },
+const services = [
+  {
+    icon: <MessageCircle className="w-6 h-6" />,
+    title: "Live Chat Platform",
+    description: "Real-time messaging with text, images, videos, and voice notes. Connect with visitors instantly.",
+    link: "#"
+  },
+  {
+    icon: <Bot className="w-6 h-6" />,
+    title: "AI Agents",
+    description: "Deploy AI Receptionist, Sales Agent, Follow-up Agent, and more. Your team that never sleeps.",
+    link: "#"
+  },
+  {
+    icon: <BarChart3 className="w-6 h-6" />,
+    title: "Smart Analytics",
+    description: "Real-time metrics on visitors, chat volume, response times, and customer satisfaction.",
+    link: "#"
+  },
+  {
+    icon: <Shield className="w-6 h-6" />,
+    title: "Enterprise Security",
+    description: "JWT authentication, Argon2 hashing, AES-256 encryption, and row-level tenant isolation.",
+    link: "#"
+  },
 ];
 
-const plans = [
-  { name: "Starter", price: "₹999", period: "/month", features: ["5 Agents", "1,000 Messages/mo", "Basic Analytics", "Email Support", "1 Branch", "Chat Widget", "File Sharing", "Mobile Responsive"], cta: "Start Free Trial", popular: false },
-  { name: "Growth", price: "₹2,999", period: "/month", features: ["25 Agents", "10,000 Messages/mo", "Advanced Analytics", "Priority Support", "Custom Branding", "AI Receptionist", "Voice Messages", "5 Branches", "API Access"], cta: "Start Free Trial", popular: true },
-  { name: "Business", price: "₹7,999", period: "/month", features: ["Unlimited Agents", "Unlimited Messages", "Full Analytics", "24/7 Phone Support", "API Access", "White Label", "AI Sales Agent", "Unlimited Branches", "Custom AI Models"], cta: "Contact Sales", popular: false },
+const stats = [
+  { icon: <Users className="w-8 h-8" />, value: "2,847+", label: "Businesses Trust Us" },
+  { icon: <MessageCircle className="w-8 h-8" />, value: "4.2M+", label: "Messages Delivered" },
+  { icon: <TrendingUp className="w-8 h-8" />, value: "99.9%", label: "Uptime Guaranteed" },
+  { icon: <Clock className="w-8 h-8" />, value: "12s", label: "Avg Response Time" },
+];
+
+const features = [
+  { icon: <Globe className="w-5 h-5" />, title: "100% Independent", description: "No WhatsApp, no Telegram. Your infrastructure, your rules." },
+  { icon: <Smartphone className="w-5 h-5" />, title: "Fully Responsive", description: "Works on desktop, tablet, and mobile. No app download needed." },
+  { icon: <Users className="w-5 h-5" />, title: "Multi-Agent", description: "Unlimited agents with role-based access control." },
+  { icon: <Phone className="w-5 h-5" />, title: "AI Voice Calls", description: "Handle calls with AI Receptionist. Books appointments automatically." },
+  { icon: <Mail className="w-5 h-5" />, title: "Email Integration", description: "Send transcripts, follow-ups, and marketing campaigns." },
+  { icon: <Brain className="w-5 h-5" />, title: "Custom AI Training", description: "Train AI on your business data, products, and services." },
 ];
 
 const testimonials = [
-  { name: "Priya Sharma", role: "Salon Chain Owner, Mumbai", quote: "Amplizo helped us increase repeat customers by 40%. The AI Receptionist handles all our calls — we never miss a booking anymore. Best investment for our 47 salons.", rating: 5 },
-  { name: "Rajesh Kumar", role: "E-commerce Entrepreneur, Delhi", quote: "We switched from WhatsApp to Amplizo and satisfaction jumped from 72% to 94%. Having our own chat platform means we own the customer relationship completely.", rating: 5 },
-  { name: "Anita Patel", role: "Clinic Manager, Bangalore", quote: "The AI Follow-up Agent automatically reminds patients about appointments. Our no-show rate dropped by 60%. The multi-branch feature lets us manage 12 clinics from one dashboard.", rating: 5 },
-  { name: "Vikram Singh", role: "Real Estate Developer, Pune", quote: "AI Sales Agent qualifies leads while we sleep. It explains projects, schedules site visits, and follows up persistently. Our conversion rate improved by 35%.", rating: 5 },
-  { name: "Meera Joshi", role: "Education Center, Hyderabad", quote: "Parents love the instant responses. The AI handles admission queries 24/7 and our counselors focus on serious inquiries. Enrollment doubled in 3 months.", rating: 5 },
-  { name: "Suresh Reddy", role: "Car Service Center, Chennai", quote: "WhatsApp was limiting us with templates and costs. Amplizo gives us full control. The file sharing feature lets customers send photos of issues instantly.", rating: 5 },
+  {
+    name: "Priya Sharma",
+    role: "Salon Chain Owner, Mumbai",
+    quote: "Amplizo helped us increase repeat customers by 40%. The AI Receptionist handles all our calls — we never miss a booking anymore.",
+    rating: 5
+  },
+  {
+    name: "Rajesh Kumar",
+    role: "E-commerce Entrepreneur, Delhi",
+    quote: "We switched from WhatsApp to Amplizo and satisfaction jumped from 72% to 94%. We own the customer relationship completely.",
+    rating: 5
+  },
+  {
+    name: "Anita Patel",
+    role: "Clinic Manager, Bangalore",
+    quote: "The AI Follow-up Agent automatically reminds patients about appointments. Our no-show rate dropped by 60%.",
+    rating: 5
+  },
 ];
 
-const faqs = [
-  { q: "How is Amplizo different from WhatsApp Business?", a: "Amplizo is fully independent — no WhatsApp, Telegram, or any third party. Chat happens on your domain with full data ownership. No message templates, no 24-hour windows, no per-message costs." },
-  { q: "Do I need to install any software?", a: "No. Amplizo is web-based. Agents log in from any browser. Visitors chat directly in the browser — no app download needed." },
-  { q: "Can I use my own domain?", a: "Yes. Set up chat at chat.yourdomain.com or any subdomain. SSL is handled automatically with Let's Encrypt." },
-  { q: "What if I need more than 25 agents?", a: "Upgrade to Business plan for unlimited agents. You can also add AI agents that work 24/7 at no extra per-agent cost." },
-  { q: "Is my data secure?", a: "Absolutely. JWT authentication with refresh token rotation, Argon2 password hashing, AES-256 encryption at rest, TLS 1.3 in transit, and row-level tenant isolation." },
-  { q: "Can I customize the chat widget?", a: "Yes. Customize colors, logos, welcome messages, position on screen, and even create different widget styles for different pages." },
-];
-
-const aiAgents = [
-  { name: "AI Receptionist", icon: <Phone className="w-6 h-6" />, description: "Answers calls 24/7, books appointments, detects language, and saves customer details automatically. Never misses a call." },
-  { name: "AI Sales Agent", icon: <Target className="w-6 h-6" />, description: "Explains products, handles objections, creates personalized offers, and confirms orders through natural conversation." },
-  { name: "AI Follow-up Agent", icon: <Clock className="w-6 h-6" />, description: "Automatically contacts customers via WhatsApp, email, or SMS at the perfect moment based on their behavior patterns." },
-  { name: "AI Retention Agent", icon: <Users className="w-6 h-6" />, description: "Predicts churn risk, personalizes win-back offers, and recovers lost customers before they switch to competitors." },
-  { name: "AI Marketing Manager", icon: <Rocket className="w-6 h-6" />, description: "Creates campaigns, segments audiences, generates content, schedules sends, and A/B tests messages automatically." },
-  { name: "AI Business Advisor", icon: <Brain className="w-6 h-6" />, description: "Answers business questions using your data. Get insights like which customers to call today or how to increase revenue." },
-];
+const footerLinks = {
+  quickLinks: [
+    { label: "Home", href: "/" },
+    { label: "About Us", href: "#about" },
+    { label: "Services", href: "#services" },
+    { label: "Pricing", href: "#pricing" },
+    { label: "Blog", href: "/blog" },
+  ],
+  services: [
+    { label: "Live Chat", href: "#services" },
+    { label: "AI Agents", href: "#services" },
+    { label: "Analytics", href: "#services" },
+    { label: "Security", href: "#services" },
+  ],
+  company: [
+    { label: "Careers", href: "/blog" },
+    { label: "Contact", href: "/help" },
+    { label: "Support", href: "/help" },
+    { label: "Feedback", href: "/feedback" },
+  ],
+};
 
 export default function HomePage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2"><div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center"><Zap className="w-5 h-5 text-white" /></div><span className="font-bold text-gray-900 dark:text-gray-100">Amplizo</span></div>
-            <nav className="hidden md:flex items-center gap-6"><a href="#features" className="text-sm text-gray-600 dark:text-gray-400">Features</a><a href="#how-it-works" className="text-sm text-gray-600 dark:text-gray-400">How It Works</a><a href="#ai-agents" className="text-sm text-gray-600 dark:text-gray-400">AI Agents</a><a href="#pricing" className="text-sm text-gray-600 dark:text-gray-400">Pricing</a><a href="/blog" className="text-sm text-gray-600 dark:text-gray-400">Blog</a><a href="/help" className="text-sm text-gray-600 dark:text-gray-400">Help</a><a href="/feedback" className="text-sm text-gray-600 dark:text-gray-400">Feedback</a></nav>
-            <div className="flex items-center gap-3"><a href="/login" className="text-sm font-medium text-gray-700 dark:text-gray-300">Sign In</a><a href="/login" className="inline-flex items-center px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700">Get Started</a></div>
+            <div className="flex items-center gap-2.5">
+              <img src="/logo.png" alt="Amplizo" className="h-10 w-10 object-contain" />
+              <span className="font-bold text-xl text-gray-900 tracking-tight">Amplizo</span>
+            </div>
+
+            <nav className="hidden lg:flex items-center gap-8">
+              <a href="/" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Home</a>
+              <a href="#about" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">About Us</a>
+              <a href="#services" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Services</a>
+              <a href="#solutions" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Solutions</a>
+              <a href="/blog" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Blog</a>
+              <a href="/help" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Careers</a>
+              <a href="/help" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Contact</a>
+            </nav>
+
+            <div className="hidden md:flex items-center gap-4">
+              <a href="/login" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Sign In</a>
+              <a href="/login" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
+                Get Started <ChevronRight className="w-4 h-4" />
+              </a>
+            </div>
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
-      </header>
-      <main>
-        {/* Hero */}
-        <section className="py-20 lg:py-32 bg-gradient-to-b from-brand-50/50 to-white dark:from-gray-900 dark:to-gray-950">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 text-sm font-medium mb-6"><Zap className="w-4 h-4" />AI-Powered Live Chat Platform</div>
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-gray-900 dark:text-gray-100 leading-tight">Independent Live Chat<br /><span className="text-brand-600">For Your Business</span></h1>
-            <p className="mt-6 text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">Connect with your website visitors instantly. No WhatsApp, no Telegram, no external dependencies. Pure, independent, real-time communication that you fully control.</p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"><a href="/login" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/30 text-lg">Start Free Trial</a><a href="#how-it-works" className="w-full sm:w-auto px-8 py-4 rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"><Play className="w-5 h-5" />Watch Demo</a></div>
-            <div className="flex flex-wrap items-center justify-center gap-6 mt-12 text-sm text-gray-500"><div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-500" />No Credit Card Required</div><div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-500" />14-Day Free Trial</div><div className="flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-green-500" />Cancel Anytime</div></div>
-          </div>
-        </section>
 
-        {/* Stats */}
-        <section className="py-16 bg-white dark:bg-gray-900 border-y border-gray-200 dark:border-gray-800">
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-gray-100 bg-white">
+            <div className="px-4 py-4 space-y-3">
+              <a href="/" className="block text-sm font-medium text-gray-700 py-2">Home</a>
+              <a href="#about" className="block text-sm font-medium text-gray-700 py-2">About Us</a>
+              <a href="#services" className="block text-sm font-medium text-gray-700 py-2">Services</a>
+              <a href="#solutions" className="block text-sm font-medium text-gray-700 py-2">Solutions</a>
+              <a href="/blog" className="block text-sm font-medium text-gray-700 py-2">Blog</a>
+              <a href="/help" className="block text-sm font-medium text-gray-700 py-2">Careers</a>
+              <a href="/help" className="block text-sm font-medium text-gray-700 py-2">Contact</a>
+              <div className="pt-3 border-t border-gray-100 flex flex-col gap-3">
+                <a href="/login" className="text-sm font-medium text-gray-700 py-2">Sign In</a>
+                <a href="/login" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium">
+                  Get Started <ChevronRight className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+
+      <main>
+        {/* Hero Section */}
+        <section className="py-16 lg:py-24 bg-gradient-to-br from-blue-50/50 via-white to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div><div className="text-3xl sm:text-4xl font-bold text-brand-600">2,847+</div><div className="mt-1 text-sm text-gray-500">Businesses Trust Us</div></div>
-              <div><div className="text-3xl sm:text-4xl font-bold text-brand-600">4.2M+</div><div className="mt-1 text-sm text-gray-500">Messages Delivered</div></div>
-              <div><div className="text-3xl sm:text-4xl font-bold text-brand-600">99.9%</div><div className="mt-1 text-sm text-gray-500">Uptime Guaranteed</div></div>
-              <div><div className="text-3xl sm:text-4xl font-bold text-brand-600">12s</div><div className="mt-1 text-sm text-gray-500">Avg Response Time</div></div>
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              <div>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                  Independent Live Chat{" "}
+                  <span className="text-blue-600">For Your Business</span>
+                </h1>
+                <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-lg">
+                  Connect with your website visitors instantly. No WhatsApp, no Telegram, no external dependencies. Pure, independent, real-time communication that you fully control.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                  <a
+                    href="/login"
+                    className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                  >
+                    Start Free Trial
+                  </a>
+                  <a
+                    href="#services"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    <Play className="w-5 h-5" /> Watch Demo
+                  </a>
+                </div>
+                <div className="flex flex-wrap gap-6 mt-10 text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    No Credit Card Required
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    14-Day Free Trial
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    Cancel Anytime
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="relative bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl p-8 lg:p-12">
+                  <div className="absolute top-4 right-4 w-24 h-24 bg-blue-200/50 rounded-full blur-2xl" />
+                  <div className="absolute bottom-4 left-4 w-32 h-32 bg-blue-300/30 rounded-full blur-3xl" />
+                  <div className="relative space-y-4">
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 max-w-xs">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <MessageCircle className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">Live Chat</p>
+                          <p className="text-xs text-gray-500">Real-time messaging</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="bg-gray-100 rounded-lg p-2 text-xs text-gray-600">Hello! How can I help you today?</div>
+                        <div className="bg-blue-600 rounded-lg p-2 text-xs text-white ml-8">I need help with my order</div>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 max-w-xs ml-auto">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <Bot className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">AI Agent</p>
+                          <p className="text-xs text-green-600">Online 24/7</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-600">Automated responses, appointment booking, and customer support.</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 max-w-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                          <BarChart3 className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">Analytics</p>
+                          <p className="text-xs text-gray-500">Real-time insights</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* How It Works */}
-        <section id="how-it-works" className="py-20 lg:py-28 bg-gray-50 dark:bg-gray-900/50">
+        {/* Services Section */}
+        <section id="services" className="py-16 lg:py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16"><div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 text-xs font-medium mb-4">HOW IT WORKS</div><h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Get Started in 3 Simple Steps</h2><p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">From sign-up to your first customer conversation in under 5 minutes.</p></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[{ step: "1", title: "Create Account", description: "Sign up free in 30 seconds. No credit card needed. Get instant access to all features and AI agents." }, { step: "2", title: "Add Widget", description: "Copy one line of code and paste it on your website. The chat widget appears instantly. Customize colors, logo, and welcome message to match your brand." }, { step: "3", title: "Start Converting", description: "Visitors see your chat widget and start conversations. Your AI agent handles common queries 24/7 while your team focuses on complex issues and closing deals." }].map((item, index) => (
-                <div key={index} className="relative text-center"><div className="w-16 h-16 rounded-2xl bg-brand-600 text-white text-2xl font-bold flex items-center justify-center mx-auto mb-6">{item.step}</div><h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">{item.title}</h3><p className="text-gray-600 dark:text-gray-400 leading-relaxed">{item.description}</p>{index < 2 && <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-px bg-gradient-to-r from-brand-300 to-transparent dark:from-brand-700" />}</div>
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">What We Do</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Solutions Built for Your Success</h2>
+              <p className="text-lg text-gray-600">Everything you need to delight customers and grow your business with independent communication.</p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {services.map((service, index) => (
+                <div
+                  key={index}
+                  className="group bg-white rounded-xl p-6 border border-gray-200 hover:border-blue-200 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 mb-4 group-hover:bg-blue-100 transition-colors">
+                    {service.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{service.title}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{service.description}</p>
+                  <a href={service.link} className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700">
+                    Learn More <ArrowRight className="w-4 h-4" />
+                  </a>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Features */}
-        <section id="features" className="py-20 lg:py-28">
+        {/* Stats Strip */}
+        <section className="py-12 bg-blue-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16"><div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 text-xs font-medium mb-4">FEATURES</div><h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Everything You Need to Delight Customers</h2><p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Production-ready features designed for modern businesses that want full control.</p></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">{features.map((feature, index) => (<div key={index} className="bg-white dark:bg-gray-900 rounded-2xl p-7 border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-brand-200 dark:hover:border-brand-800 transition-all duration-300 group"><div className="w-12 h-12 rounded-xl bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 mb-4 group-hover:scale-110 transition-transform">{feature.icon}</div><h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{feature.title}</h3><p className="mt-2 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{feature.description}</p></div>))}</div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+              {stats.map((stat, index) => (
+                <div key={index} className="text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 text-white mb-4">
+                    {stat.icon}
+                  </div>
+                  <div className="text-3xl sm:text-4xl font-bold text-white mb-1">{stat.value}</div>
+                  <div className="text-sm text-blue-100">{stat.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* AI Agents */}
-        <section id="ai-agents" className="py-20 lg:py-28 bg-gray-50 dark:bg-gray-900/50">
+        {/* About Section */}
+        <section id="about" className="py-16 lg:py-24 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16"><div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 text-xs font-medium mb-4">AI AGENTS</div><h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Your AI Team That Never Sleeps</h2><p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Deploy specialized AI employees that handle specific tasks autonomously — from answering calls to recovering lost customers.</p></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">{aiAgents.map((agent, index) => (<div key={index} className="bg-white dark:bg-gray-900 rounded-2xl p-7 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300"><div className="w-12 h-12 rounded-xl bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 mb-4">{agent.icon}</div><h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{agent.name}</h3><p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{agent.description}</p></div>))}</div>
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              <div className="relative">
+                <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl p-8 lg:p-10">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
+                        <Headphones className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <p className="font-semibold text-gray-900 text-sm">24/7 Support</p>
+                      <p className="text-xs text-gray-500 mt-1">AI agents never sleep</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-3">
+                        <TrendingUp className="w-5 h-5 text-green-600" />
+                      </div>
+                      <p className="font-semibold text-gray-900 text-sm">Growth</p>
+                      <p className="text-xs text-gray-500 mt-1">Scale without limits</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3">
+                        <Award className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <p className="font-semibold text-gray-900 text-sm">Quality</p>
+                      <p className="text-xs text-gray-500 mt-1">Enterprise grade</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                      <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-3">
+                        <Shield className="w-5 h-5 text-orange-600" />
+                      </div>
+                      <p className="font-semibold text-gray-900 text-sm">Security</p>
+                      <p className="text-xs text-gray-500 mt-1">Data protection</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">About Us</p>
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">We Are Amplizo</h2>
+                <p className="text-lg text-gray-600 leading-relaxed mb-6">
+                  Amplizo is an AI-powered independent live chat platform built for businesses that want full control over their customer communication. No WhatsApp, no Telegram, no external dependencies.
+                </p>
+                <p className="text-gray-600 leading-relaxed mb-8">
+                  Our mission is to help businesses build direct relationships with their customers. With AI agents that handle calls, follow-ups, and sales automatically, you can focus on what matters most — growing your business.
+                </p>
+                <a
+                  href="/login"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Get Started <ChevronRight className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section id="solutions" className="py-16 lg:py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Features</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Everything You Need</h2>
+              <p className="text-lg text-gray-600">Production-ready features designed for modern businesses that want full control.</p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, index) => (
+                <div key={index} className="flex gap-4 p-5 rounded-xl hover:bg-gray-50 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                    {feature.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">{feature.title}</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* Testimonials */}
-        <section className="py-20 lg:py-28">
+        <section className="py-16 lg:py-24 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16"><h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Loved by 2,847+ Businesses</h2><p className="mt-4 text-gray-600 dark:text-gray-400">Real results from real businesses across India.</p></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">{testimonials.map((t, index) => (<div key={index} className="bg-white dark:bg-gray-900 rounded-2xl p-7 border border-gray-200 dark:border-gray-700"><div className="flex gap-1 mb-4">{Array.from({ length: t.rating }).map((_, i) => <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />)}</div><p className="text-gray-700 dark:text-gray-300 leading-relaxed italic">&ldquo;{t.quote}&rdquo;</p><div className="mt-6 flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-700 dark:text-brand-400 font-bold text-sm">{t.name[0]}</div><div><div className="font-medium text-gray-900 dark:text-gray-100">{t.name}</div><div className="text-sm text-gray-500">{t.role}</div></div></div></div>))}</div>
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Testimonials</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What Our Clients Say</h2>
+              <p className="text-lg text-gray-600">Real results from real businesses across India.</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {testimonials.map((testimonial, index) => (
+                <div key={index} className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="flex gap-1 mb-4">
+                    {Array.from({ length: testimonial.rating }).map((_, i) => (
+                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed italic mb-6">&ldquo;{testimonial.quote}&rdquo;</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                      {testimonial.name[0]}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{testimonial.name}</p>
+                      <p className="text-sm text-gray-500">{testimonial.role}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* Pricing */}
-        <section id="pricing" className="py-20 lg:py-28 bg-gray-50 dark:bg-gray-900/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16"><div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 text-xs font-medium mb-4">PRICING</div><h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">Simple, Transparent Pricing</h2><p className="mt-4 text-gray-600 dark:text-gray-400">Start free, scale as you grow. No hidden fees, no surprise charges.</p></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">{plans.map((plan, index) => (<div key={index} className={`relative rounded-2xl p-8 border-2 ${plan.popular ? "border-brand-600 bg-brand-50/50 dark:bg-brand-900/10 shadow-2xl scale-105" : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"} transition-all`}>{plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-brand-600 text-white text-xs font-semibold rounded-full">Most Popular</span>}<h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{plan.name}</h3><div className="mt-4 flex items-baseline gap-1"><span className="text-4xl font-bold text-gray-900 dark:text-gray-100">{plan.price}</span><span className="text-gray-500 dark:text-gray-400">{plan.period}</span></div><ul className="mt-6 space-y-3">{plan.features.map((feature, i) => <li key={i} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"><CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />{feature}</li>)}</ul><a href="/login" className={`block w-full mt-8 py-3 rounded-xl font-semibold transition-colors text-center ${plan.popular ? "bg-brand-600 text-white hover:bg-brand-700" : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700"}`}>{plan.cta}</a></div>))}</div>
+        {/* CTA Section */}
+        <section className="py-16 lg:py-20 bg-blue-600">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to Transform Your Customer Communication?</h2>
+            <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+              Join 2,847+ businesses using Amplizo. Start your free 14-day trial today — no credit card required.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/login"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-white text-blue-600 font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Start Free Trial
+              </a>
+              <a
+                href="/help"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-lg border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-colors"
+              >
+                Talk to Sales
+              </a>
+            </div>
           </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="py-20 lg:py-28">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12"><h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Frequently Asked Questions</h2><p className="mt-4 text-gray-600 dark:text-gray-400">Everything you need to know before getting started.</p></div>
-            <div className="space-y-4">{faqs.map((faq, index) => (<div key={index} className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700"><h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{faq.q}</h3><p className="text-gray-600 dark:text-gray-400 leading-relaxed">{faq.a}</p></div>))}</div>
-            <div className="text-center mt-8"><a href="/help" className="inline-flex items-center gap-2 text-brand-600 font-medium">View all FAQs <ArrowRight className="w-4 h-4" /></a></div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="py-20 bg-brand-600">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center"><h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to Transform Your Customer Communication?</h2><p className="text-brand-100 text-lg mb-8 max-w-2xl mx-auto">Join 2,847+ businesses using Amplizo. Start your free 14-day trial today — no credit card required.</p><div className="flex flex-col sm:flex-row gap-4 justify-center"><a href="/login" className="px-8 py-4 rounded-xl bg-white text-brand-600 font-semibold hover:bg-gray-100 transition-colors text-lg">Start Free Trial</a><a href="/help" className="px-8 py-4 rounded-xl border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">Talk to Sales</a></div></div>
         </section>
       </main>
-      <footer className="bg-gray-900 dark:bg-black py-16">
+
+      {/* Footer */}
+      <footer className="bg-gray-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-            <div><h4 className="font-semibold text-white mb-4">Product</h4><ul className="space-y-2 text-sm text-gray-400"><li><a href="#features" className="hover:text-white">Features</a></li><li><a href="#pricing" className="hover:text-white">Pricing</a></li><li><a href="/blog" className="hover:text-white">Blog</a></li><li><a href="/help" className="hover:text-white">Help Center</a></li></ul></div>
-            <div><h4 className="font-semibold text-white mb-4">Company</h4><ul className="space-y-2 text-sm text-gray-400"><li><a href="/feedback" className="hover:text-white">Feedback</a></li><li><a href="/help" className="hover:text-white">Support</a></li><li><a href="/login" className="hover:text-white">Agent Login</a></li></ul></div>
-            <div><h4 className="font-semibold text-white mb-4">Resources</h4><ul className="space-y-2 text-sm text-gray-400"><li><a href="/blog" className="hover:text-white">Documentation</a></li><li><a href="/help" className="hover:text-white">API Reference</a></li><li><a href="/feedback" className="hover:text-white">Status Page</a></li></ul></div>
-            <div><h4 className="font-semibold text-white mb-4">Legal</h4><ul className="space-y-2 text-sm text-gray-400"><li><a href="/help" className="hover:text-white">Privacy Policy</a></li><li><a href="/help" className="hover:text-white">Terms of Service</a></li><li><a href="/help" className="hover:text-white">GDPR</a></li></ul></div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
+            <div className="col-span-2 md:col-span-4 lg:col-span-1">
+              <div className="flex items-center gap-2.5 mb-4">
+                <img src="/logo.png" alt="Amplizo" className="h-10 w-10 object-contain" />
+                <span className="font-bold text-white tracking-tight">Amplizo</span>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                AI-powered independent live chat platform for businesses.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-white mb-4">Quick Links</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                {footerLinks.quickLinks.map((link, i) => (
+                  <li key={i}><a href={link.href} className="hover:text-white transition-colors">{link.label}</a></li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-white mb-4">Services</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                {footerLinks.services.map((link, i) => (
+                  <li key={i}><a href={link.href} className="hover:text-white transition-colors">{link.label}</a></li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-white mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                {footerLinks.company.map((link, i) => (
+                  <li key={i}><a href={link.href} className="hover:text-white transition-colors">{link.label}</a></li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-white mb-4">Newsletter</h4>
+              <p className="text-sm text-gray-400 mb-3">Stay updated with our latest features.</p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Enter email"
+                  className="flex-1 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                />
+                <button className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center"><Zap className="w-4 h-4 text-white" /></div><span className="font-semibold text-white">Amplizo</span></div><p className="text-sm text-gray-500">© 2026 Amplizo. All rights reserved. Made with love in India.</p></div>
+
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-gray-500">&copy; 2026 Amplizo. All rights reserved. Made with love in India.</p>
+            <div className="flex items-center gap-4">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
+
       <VisitorWidget />
     </div>
   );

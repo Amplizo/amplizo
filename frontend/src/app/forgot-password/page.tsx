@@ -66,7 +66,10 @@ export default function ForgotPasswordPage() {
 
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8"><div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center"><Zap className="w-5 h-5 text-white" /></div><span className="font-bold text-gray-900 dark:text-gray-100">Amplizo</span></div>
+           <div className="lg:hidden flex items-center gap-3 mb-8">
+             <img src="/logo.png" alt="Amplizo" className="h-10 w-10 object-contain" />
+             <span className="font-bold text-gray-900 dark:text-gray-100 tracking-tight">Amplizo</span>
+           </div>
           <Link href="/login" className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-8"><ArrowLeft className="w-4 h-4" />Back to sign in</Link>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Forgot password?</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 mb-8">Enter your email and we will send you a reset link</p>

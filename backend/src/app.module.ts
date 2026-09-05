@@ -9,7 +9,10 @@ import { ChatModule } from "./chat/chat.module";
 import { WebsocketModule } from "./websocket/websocket.module";
 import { UploadModule } from "./upload/upload.module";
 import { AdminModule } from "./admin/admin.module";
+import { NotificationModule } from "./notification/notification.module";
 import { CommonModule } from "./common/common.module";
+import { CrmModule } from "./crm/crm.module";
+import { WhatsAppModule } from "./whatsapp/whatsapp.module";
 
 @Module({})
 export class AppModule {
@@ -44,6 +47,9 @@ export class AppModule {
         WebsocketModule,
         UploadModule,
         AdminModule,
+        NotificationModule,
+        CrmModule,
+        WhatsAppModule,
       ],
     };
   }

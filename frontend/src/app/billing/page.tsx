@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Plus, Search, Filter, MoreVertical, Eye, Download, Send, FileText, Receipt, IndianRupee, Smartphone, Link, CreditCard, Repeat, X } from "lucide-react";
 
 const mockInvoices = [
@@ -52,6 +53,7 @@ export default function BillingPage() {
 
   return (
     <DashboardLayout title="Billing & Invoices" subtitle="Manage invoices, payments, and billing options">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

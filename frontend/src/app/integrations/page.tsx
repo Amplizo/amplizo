@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { MessageSquare, Calendar, Sheet, FileText, ShoppingBag, Store, CreditCard, Mail, Smartphone, Phone, Globe, CheckCircle2, XCircle, Settings, ExternalLink, ChevronRight, Plus, Search } from "lucide-react";
 
 const integrations = [
@@ -36,6 +37,7 @@ export default function IntegrationsPage() {
 
   return (
     <DashboardLayout title="Integrations" subtitle="Connect your favorite tools and platforms">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -46,11 +46,9 @@ export default function AdminLoginPage() {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <Zap className="w-7 h-7 text-white" />
-            </div>
+            <img src="/logo.png" alt="Amplizo" className="h-14 w-14 object-contain" />
             <div>
-              <h1 className="text-2xl font-bold text-white">Amplizo</h1>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Amplizo</h1>
               <p className="text-brand-200 text-sm">Admin Control Panel</p>
             </div>
           </div>
@@ -107,11 +105,9 @@ export default function AdminLoginPage() {
       {/* Right Panel - Login Form */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Amplizo</h1>
+          <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
+            <img src="/logo.png" alt="Amplizo" className="h-12 w-12 object-contain" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Amplizo</h1>
           </div>
 
           <div className="flex items-center gap-2 mb-2">

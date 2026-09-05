@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { BackButton } from "@/components/ui/BackButton";
 import { Users, Search, Filter, Plus, X, Eye, Mail, Phone, MapPin, ShoppingBag, Star, MoreVertical, ChevronDown } from "lucide-react";
 
 const mockCustomers = [
@@ -43,6 +44,7 @@ export default function CRMPage() {
 
   return (
     <DashboardLayout title="Smart CRM" subtitle="Manage customer relationships and segments">
+      <BackButton className="mb-3" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

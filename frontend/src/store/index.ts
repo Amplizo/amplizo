@@ -19,7 +19,13 @@ export const useAuthStore = create<AuthState>()(
       (set) => ({
         agent: null, token: null, refreshToken: null, isAuthenticated: false,
         setAuth: (agent, token, refreshToken) => set({ agent, token, refreshToken, isAuthenticated: true }),
-        logout: () => set({ agent: null, token: null, refreshToken: null, isAuthenticated: false }),
+        logout: () => {
+          if (typeof document !== "undefined") {
+            document.cookie = "amplizo_token=; path=/; max-age=0";
+            document.cookie = "amplizo_role=; path=/; max-age=0";
+          }
+          set({ agent: null, token: null, refreshToken: null, isAuthenticated: false });
+        },
       }),
       { name: "amplizo-auth" }
     ),

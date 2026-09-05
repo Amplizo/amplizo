@@ -7,7 +7,9 @@ import { AssignmentService } from "./assignment.service";
 import { ActivityLogService } from "./activity-log.service";
 import { AiService } from "./ai.service";
 import { ScheduledCallService } from "./scheduled-call.service";
+import { FollowUpScheduler } from "./follow-up.scheduler";
 import { WebhookController } from "./webhook.controller";
+import { WhatsAppModule } from "../whatsapp/whatsapp.module";
 
 @Module({
   controllers: [CrmController, WebhookController],
@@ -19,7 +21,9 @@ import { WebhookController } from "./webhook.controller";
     ActivityLogService,
     AiService,
     ScheduledCallService,
+    FollowUpScheduler,
   ],
+  imports: [WhatsAppModule],
   exports: [
     CustomerService,
     FollowUpService,
