@@ -1,8 +1,15 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuthStore } from "@/store";
+import api from "@/lib/api";
 import { Users, UserPlus, PhoneCall, Calendar, TrendingUp, TrendingDown, ArrowUpRight, Plus, X, Eye, Mail, Phone, MapPin, Clock, CheckCircle2, AlertCircle, XCircle, MessageCircle, Star, IndianRupee, Activity, Target, Zap, Award, Heart, ShoppingCart, BarChart3 } from "lucide-react";
+import { AddCustomerModal } from "@/components/crm/AddCustomerModal";
+import { ScheduleCallModal } from "@/components/crm/ScheduleCallModal";
+import { SendWhatsAppModal } from "@/components/crm/SendWhatsAppModal";
+import { SendEmailModal } from "@/components/crm/SendEmailModal";
 
 interface Customer {
   id: string;
@@ -77,54 +84,71 @@ const getActivityColor = (color: string) => {
 };
 
 export default function ClientDashboard() {
+  const router = useRouter();
   const { agent } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"overview" | "customers" | "followups" | "analytics">("overview");
   const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [showScheduleCall, setShowScheduleCall] = useState(false);
+  const [showSendWhatsApp, setShowSendWhatsApp] = useState(false);
+  const [showSendEmail, setShowSendEmail] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [customerStats, setCustomerStats] = useState<{ total: number; active: number; vip: number; todayNew: number; hot: number; cold: number; notInterested: number; pendingFollowUps: number } | null>(null);
+  const [followUpStats, setFollowUpStats] = useState<{ pending: number; completed: number; todayDue: number; overdue: number } | null>(null);
   const [newCustomer, setNewCustomer] = useState({ name: "", phone: "", email: "", notes: "", city: "", source: "Website" });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [successMessage, setSuccessMessage] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [list, stats, fuStats] = await Promise.all([
+          api.getCustomers({ take: 100 }).catch(() => ({ items: [], total: 0 })),
+          api.getCustomerStats().catch(() => null),
+          api.getFollowUpStats().catch(() => null),
+        ]);
+        if (cancelled) return;
+        const items = (list && (list.items || list)) as any[];
+        setCustomers(items || []);
+        if (stats) setCustomerStats(stats);
+        if (fuStats) setFollowUpStats(fuStats);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [showAddCustomer, showScheduleCall, showSendWhatsApp, showSendEmail]);
+
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(""), 3000);
   };
 
-  const handleAddCustomer = (e: React.FormEvent) => {
-    e.preventDefault();
-    const customer: Customer = {
-      id: Date.now().toString(),
-      name: newCustomer.name,
-      phone: newCustomer.phone,
-      email: newCustomer.email,
-      status: "Active",
-      lastContact: "Just now",
-      followups: 0,
-      nextFollowup: "Not scheduled",
-      totalSpent: 0,
-      rating: 0,
-      city: newCustomer.city,
-      source: newCustomer.source,
-      joinDate: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
-    };
-    setCustomers([customer, ...customers]);
+  const handleAddCustomerLocal = () => {
     setShowAddCustomer(false);
     setNewCustomer({ name: "", phone: "", email: "", notes: "", city: "", source: "Website" });
-    showSuccess("Customer added successfully!");
+    showSuccess("Customer added successfully! Follow-ups scheduled for +3, +7, and +15 days.");
   };
 
-  const totalCustomers = customers.length;
-  const activeCustomers = customers.filter(c => c.status === "Active" || c.status === "VIP").length;
-  const vipCustomers = customers.filter(c => c.status === "VIP").length;
-  const pendingFollowups = mockFollowups.filter(f => f.status === "Pending").length;
-  const totalRevenue = customers.reduce((sum, c) => sum + c.totalSpent, 0);
-  const avgRating = customers.length > 0 ? (customers.reduce((sum, c) => sum + c.rating, 0) / customers.length).toFixed(1) : "0";
+  const totalCustomers = customerStats?.total ?? 0;
+  const activeCustomers = customerStats?.active ?? 0;
+  const vipCustomers = customerStats?.vip ?? 0;
+  const pendingFollowups = followUpStats?.pending ?? 0;
+  const totalFollowUps = followUpStats ? (followUpStats.pending + followUpStats.completed) : 0;
+  const totalRevenue = customers.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
+  const avgRating = "0";
+
+  const filteredCustomers = customerSearch.trim()
+    ? customers.filter((c) => {
+        const q = customerSearch.trim().toLowerCase();
+        return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q) || c.city.toLowerCase().includes(q);
+      })
+    : customers;
 
   const getGreeting = () => {
     const hour = currentTime.getHours();
@@ -167,10 +191,13 @@ export default function ClientDashboard() {
                 <p className="text-brand-100 text-xs">Pending Tasks</p>
                 <p className="text-xl font-bold">{pendingFollowups}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <p className="text-brand-100 text-xs">Avg Rating</p>
-                <p className="text-xl font-bold">{avgRating}</p>
-              </div>
+              <button
+                onClick={() => setShowAddCustomer(true)}
+                className="bg-white text-brand-700 hover:bg-white/95 backdrop-blur-sm rounded-xl p-3 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
+              >
+                <UserPlus className="w-5 h-5" />
+                <span className="font-bold text-base">Add Customer</span>
+              </button>
             </div>
           </div>
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -178,27 +205,36 @@ export default function ClientDashboard() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
+          <Link
+            href="/customers"
+            className="group cursor-pointer bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300 active:scale-[0.98]"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 group-hover:scale-110 transition-transform">
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
-              <span className="text-xs text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full"><ArrowUpRight className="w-3 h-3" />12%</span>
+              <span className="text-xs text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full"><ArrowUpRight className="w-3 h-3" />{totalCustomers > 0 ? `${customerStats?.todayNew ?? 0} new` : "0"}</span>
             </div>
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalCustomers}</p>
             <p className="text-sm text-gray-500 mt-1">Total Customers</p>
-          </div>
-          <div className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
+          </Link>
+          <Link
+            href="/customers?filter=active"
+            className="group cursor-pointer bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300 active:scale-[0.98]"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 group-hover:scale-110 transition-transform">
                 <UserPlus className="w-5 h-5 text-green-600" />
               </div>
-              <span className="text-xs text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full"><ArrowUpRight className="w-3 h-3" />8%</span>
+              <span className="text-xs text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full"><ArrowUpRight className="w-3 h-3" />Active</span>
             </div>
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activeCustomers}</p>
             <p className="text-sm text-gray-500 mt-1">Active</p>
-          </div>
-          <div className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
+          </Link>
+          <Link
+            href="/customers?filter=vip"
+            className="group cursor-pointer bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300 active:scale-[0.98]"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-900/20 group-hover:scale-110 transition-transform">
                 <Award className="w-5 h-5 text-purple-600" />
@@ -207,17 +243,20 @@ export default function ClientDashboard() {
             </div>
             <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{vipCustomers}</p>
             <p className="text-sm text-gray-500 mt-1">VIP Customers</p>
-          </div>
-          <div className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
+          </Link>
+          <Link
+            href="/follow-ups"
+            className="group cursor-pointer bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300 active:scale-[0.98]"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20 group-hover:scale-110 transition-transform">
                 <PhoneCall className="w-5 h-5 text-orange-600" />
               </div>
               <span className="text-xs text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-full">{pendingFollowups} pending</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{mockFollowups.length}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalFollowUps}</p>
             <p className="text-sm text-gray-500 mt-1">Follow-ups</p>
-          </div>
+          </Link>
           <div className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
             <div className="flex items-center justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-pink-50 dark:bg-pink-900/20 group-hover:scale-110 transition-transform">
@@ -299,13 +338,13 @@ export default function ClientDashboard() {
                   <button onClick={() => setShowAddCustomer(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
                     <Plus className="w-5 h-5" /><span className="font-medium">Add Customer</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                  <button onClick={() => setShowScheduleCall(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
                     <PhoneCall className="w-5 h-5" /><span className="font-medium">Schedule Call</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                  <button onClick={() => setShowSendWhatsApp(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
                     <MessageCircle className="w-5 h-5" /><span className="font-medium">Send WhatsApp</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                  <button onClick={() => setShowSendEmail(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
                     <Mail className="w-5 h-5" /><span className="font-medium">Send Email</span>
                   </button>
                 </div>
@@ -336,8 +375,12 @@ export default function ClientDashboard() {
                 <Zap className="w-8 h-8 mb-3" />
                 <h3 className="font-bold text-lg">Upgrade to Pro</h3>
                 <p className="text-brand-100 text-sm mt-1">Unlock AI Predictions, Autonomous Mode, and more!</p>
-                <button className="mt-4 w-full py-2 bg-white text-brand-700 rounded-lg font-medium hover:bg-brand-50 transition-colors">
+                <button
+                  onClick={() => router.push("/subscription")}
+                  className="mt-4 w-full py-2 bg-white text-brand-700 rounded-lg font-medium hover:bg-brand-50 transition-colors flex items-center justify-center gap-2"
+                >
                   View Plans
+                  <ArrowUpRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -347,10 +390,10 @@ export default function ClientDashboard() {
         {activeTab === "customers" && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-4">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">All Customers ({totalCustomers})</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">All Customers ({filteredCustomers.length})</h3>
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <input type="text" placeholder="Search customers..." className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm w-64" />
+                  <input type="text" placeholder="Search customers..." value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm w-64" />
                   <Eye className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
                 <button onClick={() => setShowAddCustomer(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition-colors">
@@ -372,12 +415,12 @@ export default function ClientDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {customers.map((c) => (
+                  {filteredCustomers.map((c) => (
                     <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer" onClick={() => setSelectedCustomer(c)}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold text-sm">
-                            {c.name.split(' ').map(n => n[0]).join('')}
+                            {c.name.split(' ').map((n: string) => n[0]).join('')}
                           </div>
                           <div>
                             <p className="font-medium text-gray-900 dark:text-gray-100">{c.name}</p>
@@ -406,6 +449,9 @@ export default function ClientDashboard() {
                   ))}
                 </tbody>
               </table>
+              {customerSearch.trim() && filteredCustomers.length === 0 && (
+                <div className="p-8 text-center text-gray-500">No customers found matching &quot;{customerSearch}&quot;</div>
+              )}
             </div>
           </div>
         )}
@@ -484,7 +530,7 @@ export default function ClientDashboard() {
                   {[...customers].sort((a, b) => b.totalSpent - a.totalSpent).map((c) => (
                     <div key={c.id} className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold text-xs">
-                        {c.name.split(' ').map(n => n[0]).join('')}
+                        {c.name.split(' ').map((n: string) => n[0]).join('')}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
@@ -598,52 +644,36 @@ export default function ClientDashboard() {
         )}
 
         {showAddCustomer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAddCustomer(false)}>
-            <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Add New Customer</h3>
-                <button onClick={() => setShowAddCustomer(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-              <form className="space-y-4 p-6" onSubmit={handleAddCustomer}>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input type="text" value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" placeholder="Enter name" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input type="tel" value={newCustomer.phone} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" placeholder="+91 98765 43210" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" value={newCustomer.email} onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })} className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" placeholder="email@example.com" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input type="text" value={newCustomer.city} onChange={(e) => setNewCustomer({ ...newCustomer, city: e.target.value })} className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" placeholder="Enter city" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                  <select value={newCustomer.source} onChange={(e) => setNewCustomer({ ...newCustomer, source: e.target.value })} className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                    <option value="Website">Website</option>
-                    <option value="Referral">Referral</option>
-                    <option value="Google">Google</option>
-                    <option value="Social Media">Social Media</option>
-                    <option value="Direct">Direct</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                  <textarea value={newCustomer.notes} onChange={(e) => setNewCustomer({ ...newCustomer, notes: e.target.value })} className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" rows={2} placeholder="Add notes..." />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowAddCustomer(false)} className="flex-1 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
-                  <button type="submit" className="flex-1 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700">Add Customer</button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <AddCustomerModal
+            onClose={() => setShowAddCustomer(false)}
+            onCreated={() => {
+              handleAddCustomerLocal();
+            }}
+          />
+        )}
+        {showScheduleCall && (
+          <ScheduleCallModal
+            onClose={() => setShowScheduleCall(false)}
+            onScheduled={() => {
+              showSuccess("Call scheduled successfully!");
+            }}
+          />
+        )}
+        {showSendWhatsApp && (
+          <SendWhatsAppModal
+            onClose={() => setShowSendWhatsApp(false)}
+            onSent={() => {
+              showSuccess("WhatsApp message sent successfully!");
+            }}
+          />
+        )}
+        {showSendEmail && (
+          <SendEmailModal
+            onClose={() => setShowSendEmail(false)}
+            onSent={() => {
+              showSuccess("Email sent successfully!");
+            }}
+          />
         )}
       </div>
     </DashboardLayout>

@@ -18,6 +18,10 @@ export class EmailService {
     }
   }
 
+  isReady() {
+    return this.enabled;
+  }
+
   async sendEmail(to: string, subject: string, html: string) {
     if (!this.enabled) {
       this.logger.log(`[EMAIL MOCK] To: ${to}, Subject: ${subject}`);

@@ -13,16 +13,29 @@ model Agent {
   email        String    @unique
   password     String
   role         String    @default("agent")
-  avatar       String?
+  mobile       String?
   status       String    @default("offline")
+  isActive     Boolean   @default(true)
+  avatar       String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  refreshTokens RefreshToken[]
-  chats         Chat[]   @relation("AgentChats")
-  sessions      Session[]
-  passwordReset PasswordReset?
+  refreshTokens    RefreshToken[]
+  chats            Chat[]   @relation("AgentChats")
+  sessions         Session[]
+  passwordReset    PasswordReset?
+  notifications    Notification[]
+  assignedClients  Client[] @relation("AssignedAgent")
+  createdPurchases Purchase[] @relation("PurchaseCreator")
+  assignedFollowUps FollowUp[] @relation("FollowUpAssignee")
+  completedFollowUps FollowUp[] @relation("FollowUpCompleter")
+  activityLogs     ActivityLog[] @relation("ActivityActor")
+  assignmentsGiven CustomerAssignment[] @relation("AssignmentActor")
+  whatsAppConversations WhatsAppConversation[] @relation("WhatsAppConversations")
+  whatsAppPhoneAssignments WhatsAppPhoneAssignment[] @relation("WhatsAppPhoneAssignments")
+  assignmentsReceived CustomerAssignment[] @relation("AssignmentEmployee")
+  scheduledCalls   ScheduledCall[]
 }
 
 model RefreshToken {
@@ -56,25 +69,30 @@ model Visitor {
 }
 
 model Chat {
-  id          String    @id @default(uuid())
-  visitorId   String
-  visitor     Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
-  agentId     String?
-  agent       Agent?    @relation("AgentChats", fields: [agentId], references: [id])
-  status      String    @default("waiting")
-  subject     String?
-  tags        String    @default("")
-  unreadCount Int       @default(0)
-  closedAt    DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id              String    @id @default(uuid())
+  visitorId       String
+  visitor         Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  clientId        String?
+  client          Client?   @relation(fields: [clientId], references: [id])
+  agentId         String?
+  agent           Agent?    @relation("AgentChats", fields: [agentId], references: [id])
+  status          String    @default("waiting")
+  conversationState String  @default("AI_ACTIVE")
+  subject         String?
+  tags            String    @default("")
+  unreadCount     Int       @default(0)
+  closedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
   messages Message[]
 
   @@index([status])
   @@index([agentId])
   @@index([visitorId])
+  @@index([clientId])
+  @@index([conversationState])
 }
 
 model Message {
@@ -146,4 +164,300 @@ model PasswordReset {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Client {
+  id                  String   @id @default(uuid())
+  name                String
+  email               String?  @unique
+  phone               String?  @unique
+  city                String?
+  plan                String   @default("Starter")
+  status              String   @default("Active")
+  source              String?  @default("Direct")
+  notes               String?
+  totalChats          Int      @default(0)
+  satisfaction        Int      @default(0)
+  currentLeadStatus   String   @default("NEW")
+  assignedEmployeeId  String?
+  assignedEmployee    Agent?   @relation("AssignedAgent", fields: [assignedEmployeeId], references: [id])
+  externalPlatformId  String?  @unique
+  joined              DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  purchases        Purchase[]
+  followUpCycles   FollowUpCycle[]
+  followUps        FollowUp[]
+  activityLogs     ActivityLog[]
+  assignments      CustomerAssignment[]
+  chatThreads      Chat[]
+  smsLogs          SmsLog[]
+  whatsAppConversations WhatsAppConversation[]
+  scheduledCalls   ScheduledCall[]
+
+  @@index([phone])
+  @@index([currentLeadStatus])
+  @@index([assignedEmployeeId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  agentId   String?
+  agent     Agent?   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@index([agentId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model Purchase {
+  id              String   @id @default(uuid())
+  clientId        String
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  purchaseAmount  Float
+  productDetails  String?
+  purchaseDate    DateTime @default(now())
+  createdById     String?
+  createdBy       Agent?   @relation("PurchaseCreator", fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  followUpCycle   FollowUpCycle?
+
+  @@index([clientId])
+  @@index([purchaseDate])
+}
+
+model FollowUpCycle {
+  id          String   @id @default(uuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  purchaseId  String   @unique
+  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  status      String   @default("ACTIVE")
+  cancelledReason String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  followUps   FollowUp[]
+
+  @@index([clientId])
+  @@index([status])
+}
+
+model FollowUp {
+  id                  String   @id @default(uuid())
+  cycleId             String
+  cycle               FollowUpCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  clientId            String
+  client              Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  purchaseId          String
+  followUpNumber      Int
+  scheduledDate       DateTime
+  status              String   @default("PENDING")
+  assignedEmployeeId  String?
+  assignedEmployee    Agent?   @relation("FollowUpAssignee", fields: [assignedEmployeeId], references: [id])
+  notes               String?
+  completedAt         DateTime?
+  completedById       String?
+  completedBy         Agent?   @relation("FollowUpCompleter", fields: [completedById], references: [id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  smsLogs             SmsLog[]
+
+  @@index([clientId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([assignedEmployeeId])
+}
+
+model ActivityLog {
+  id            String   @id @default(uuid())
+  clientId      String?
+  client        Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          Agent?   @relation("ActivityActor", fields: [userId], references: [id])
+  activityType  String
+  description   String
+  metadata      String?
+  createdAt     DateTime @default(now())
+
+  @@index([clientId])
+  @@index([activityType])
+  @@index([createdAt])
+}
+
+model CustomerAssignment {
+  id           String   @id @default(uuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  employeeId   String
+  employee     Agent    @relation("AssignmentEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  assignedById String?
+  assignedBy   Agent?   @relation("AssignmentActor", fields: [assignedById], references: [id])
+  assignedAt   DateTime @default(now())
+  unassignedAt DateTime?
+
+  @@index([clientId])
+  @@index([employeeId])
+}
+
+model SmsLog {
+  id          String   @id @default(uuid())
+  to          String
+  body        String
+  status      String
+  sid         String?
+  error       String?
+  type        String?
+  clientId    String?
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  followUpId  String?
+  followUp    FollowUp? @relation(fields: [followUpId], references: [id], onDelete: SetNull)
+  sentAt      DateTime @default(now())
+
+  @@index([clientId])
+  @@index([followUpId])
+  @@index([status])
+  @@index([sentAt])
+}
+
+model WhatsAppConversation {
+  id                String   @id @default(uuid())
+  // Tenant isolation: each conversation is owned by exactly one agent/employee
+  ownerAgentId      String
+  ownerAgent        Agent    @relation("WhatsAppConversations", fields: [ownerAgentId], references: [id], onDelete: Cascade)
+  // Customer link (optional - can be created first then linked)
+  clientId          String?
+  client            Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  // Customer's WhatsApp phone number (E.164, the key Meta uses to reach this person)
+  remotePhone       String
+  // Customer's display name (pulled from profile or first message)
+  remoteName        String?
+  // WhatsApp profile picture (optional)
+  remoteAvatarUrl   String?
+  // Last activity (used for sorting conversation list)
+  lastMessageAt     DateTime @default(now())
+  // Last message preview
+  lastMessagePreview String?
+  lastMessageDirection String?
+  // Unread count (incremented on inbound, reset when agent opens/sends)
+  unreadCount       Int      @default(0)
+  // Conversation state: OPEN | UNASSIGNED | CLOSED
+  // UNASSIGNED = orphan lead in admin pool (no tenant mapped to this phoneNumberId)
+  status            String   @default("OPEN")
+  // Per-conversation override for which Meta phone number ID is used (optional)
+  phoneNumberId     String?
+  // NEW: tracks if this is an unassigned lead (visible only to admin + assigned tenant)
+  isUnassigned      Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  messages          WhatsAppMessage[]
+  webhookEvents     WhatsAppWebhookEvent[]
+
+  @@unique([ownerAgentId, remotePhone])
+  @@index([ownerAgentId])
+  @@index([clientId])
+  @@index([remotePhone])
+  @@index([lastMessageAt])
+  @@index([status])
+  @@index([isUnassigned])
+  @@index([phoneNumberId])
+}
+
+model WhatsAppMessage {
+  id                String   @id @default(uuid())
+  conversationId    String
+  conversation      WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  direction         String   // INBOUND | OUTBOUND
+  type              String   @default("text")  // text | image | document | audio | video | template
+  body              String?
+  mediaUrl          String?
+  mediaMimeType     String?
+  // Status: SENT | DELIVERED | READ | FAILED
+  status            String   @default("PENDING")
+  // Meta's WhatsApp message ID (used for status callbacks)
+  whatsappMessageId String?  @unique
+  // Error info if sending failed
+  errorCode         String?
+  errorMessage      String?
+  // When the agent/user sent it
+  sentAt            DateTime @default(now())
+  // When Meta confirmed status (delivered/read/failed)
+  deliveredAt       DateTime?
+  readAt            DateTime?
+
+  @@index([conversationId])
+  @@index([status])
+  @@index([whatsappMessageId])
+  @@index([sentAt])
+}
+
+model WhatsAppWebhookEvent {
+  id              String   @id @default(uuid())
+  // Raw payload Meta sent
+  payload         String
+  // Detected conversation (best-effort)
+  conversationId  String?
+  conversation    WhatsAppConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  // Event type: message | status | unknown
+  type            String
+  // Dedup key (Meta sends the same wamid in multiple fields)
+  dedupKey        String?  @unique
+  // Processing status: received | processed | failed | ignored
+  processingStatus String  @default("received")
+  processingError String?
+  receivedAt      DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([type])
+  @@index([receivedAt])
+}
+
+// WhatsAppPhoneAssignment maps a Meta WhatsApp phone_number_id to the Amplizo tenant/agent
+// that owns it. If a webhook arrives with a phone_number_id that has no mapping here, the
+// conversation goes to the ADMIN UNASSIGNED POOL (not visible to any client tenant) until
+// admin claims it. This is the security boundary that prevents cross-tenant leak via
+// unassigned leads.
+model WhatsAppPhoneAssignment {
+  id            String   @id @default(uuid())
+  phoneNumberId String   @unique
+  // The agent/tenant who owns this WhatsApp Business number
+  ownerAgentId  String
+  ownerAgent    Agent    @relation("WhatsAppPhoneAssignments", fields: [ownerAgentId], references: [id], onDelete: Cascade)
+  // Free-form label for admin reference
+  label         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([ownerAgentId])
+}
+
+model ScheduledCall {
+  id                 String    @id @default(uuid())
+  clientId           String
+  client             Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  assignedEmployeeId String?
+  assignedEmployee   Agent?    @relation(fields: [assignedEmployeeId], references: [id])
+  phone              String
+  scheduledDate      DateTime
+  notes              String?
+  status             String    @default("PENDING")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([clientId])
+  @@index([assignedEmployeeId])
+  @@index([scheduledDate])
+  @@index([status])
 }
