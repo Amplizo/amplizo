@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/jwt.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { PrismaService } from "../prisma/prisma.service";
+import { Request } from "express";
 
 @ApiTags("notifications")
 @Controller("notifications")
@@ -15,23 +16,31 @@ export class NotificationController {
 
   @Get()
   @ApiOperation({ summary: "Get notifications for current user" })
-  async getNotifications(@Query("unread") unread?: string, @Query("limit") limit?: string) {
-    const agentId = undefined;
-    const where: any = {};
+  async getNotifications(@Req() req: Request, @Query("unread") unread?: string, @Query("limit") limit?: string, @Query("skip") skip?: string) {
+    const agentId = (req.user as any)?.id;
+    const where: any = { agentId };
     if (unread === "true") where.read = false;
     const take = limit ? parseInt(limit) : 20;
+    const skipVal = skip ? parseInt(skip) : 0;
 
-    return this.prisma.notification.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take,
-    });
+    const [items, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: skipVal,
+        take,
+      }),
+      this.prisma.notification.count({ where }),
+    ]);
+
+    return { items, total, skip: skipVal, take };
   }
 
   @Get("unread-count")
   @ApiOperation({ summary: "Get unread notification count" })
-  async getUnreadCount() {
-    const count = await this.prisma.notification.count({ where: { read: false } });
+  async getUnreadCount(@Req() req: Request) {
+    const agentId = (req.user as any)?.id;
+    const count = await this.prisma.notification.count({ where: { agentId, read: false } });
     return { count };
   }
 

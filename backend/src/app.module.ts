@@ -13,6 +13,7 @@ import { NotificationModule } from "./notification/notification.module";
 import { CommonModule } from "./common/common.module";
 import { CrmModule } from "./crm/crm.module";
 import { WhatsAppModule } from "./whatsapp/whatsapp.module";
+import { SubscriptionModule } from "./subscription/subscription.module";
 
 @Module({})
 export class AppModule {
@@ -43,13 +44,13 @@ export class AppModule {
         PrismaModule,
         AuthModule,
         VisitorModule,
-        ChatModule,
         WebsocketModule,
         UploadModule,
         AdminModule,
         NotificationModule,
         CrmModule,
         WhatsAppModule,
+        SubscriptionModule,
       ],
     };
   }

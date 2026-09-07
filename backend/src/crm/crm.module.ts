@@ -8,11 +8,14 @@ import { ActivityLogService } from "./activity-log.service";
 import { AiService } from "./ai.service";
 import { ScheduledCallService } from "./scheduled-call.service";
 import { FollowUpScheduler } from "./follow-up.scheduler";
-import { WebhookController } from "./webhook.controller";
+import { ImportExportController } from "./import-export.controller";
+import { ImportExportService } from "./import-export.service";
+import { AIFollowUpService } from "./ai-followup.service";
 import { WhatsAppModule } from "../whatsapp/whatsapp.module";
+import { CommonModule } from "../common/common.module";
 
 @Module({
-  controllers: [CrmController, WebhookController],
+  controllers: [CrmController, ImportExportController],
   providers: [
     CustomerService,
     PurchaseService,
@@ -22,8 +25,10 @@ import { WhatsAppModule } from "../whatsapp/whatsapp.module";
     AiService,
     ScheduledCallService,
     FollowUpScheduler,
+    ImportExportService,
+    AIFollowUpService,
   ],
-  imports: [WhatsAppModule],
+  imports: [WhatsAppModule, CommonModule],
   exports: [
     CustomerService,
     FollowUpService,
@@ -31,6 +36,8 @@ import { WhatsAppModule } from "../whatsapp/whatsapp.module";
     ActivityLogService,
     AiService,
     ScheduledCallService,
+    ImportExportService,
+    AIFollowUpService,
   ],
 })
 export class CrmModule {}

@@ -9,7 +9,11 @@ export class MessageService {
     return this.prisma.message.create({ data: { chatId, senderId, senderType, senderName: data.senderName, content: data.content, status: "sent", replyTo: data.replyTo, attachments: data.attachments?.length ? { create: data.attachments } : undefined }, include: { attachments: true } });
   }
 
-  async findByChatId(chatId: string) {
-    return this.prisma.message.findMany({ where: { chatId }, orderBy: { createdAt: "asc" }, include: { attachments: true } });
+  async findByChatId(chatId: string, skip = 0, take = 50) {
+    const [items, total] = await Promise.all([
+      this.prisma.message.findMany({ where: { chatId }, skip, take, orderBy: { createdAt: "asc" }, include: { attachments: true } }),
+      this.prisma.message.count({ where: { chatId } }),
+    ]);
+    return { items, total, skip, take };
   }
 }

@@ -26,20 +26,26 @@ export class ChatService {
     });
   }
 
-  async findAll(status?: string, agentId?: string) {
+  async findAll(status?: string, agentId?: string, skip = 0, take = 50) {
     const where: any = {};
     if (status) where.status = status;
     if (agentId) where.agentId = agentId;
-    return this.prisma.chat.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      include: {
-        visitor: true,
-        client: { select: { id: true, name: true, phone: true, city: true, currentLeadStatus: true } },
-        agent: { select: { id: true, name: true, email: true, role: true, avatar: true, status: true } },
-        messages: { take: 1, orderBy: { createdAt: "desc" } },
-      },
-    });
+    const [items, total] = await Promise.all([
+      this.prisma.chat.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { updatedAt: "desc" },
+        include: {
+          visitor: true,
+          client: { select: { id: true, name: true, phone: true, city: true, currentLeadStatus: true } },
+          agent: { select: { id: true, name: true, email: true, role: true, avatar: true, status: true } },
+          messages: { take: 1, orderBy: { createdAt: "desc" } },
+        },
+      }),
+      this.prisma.chat.count({ where }),
+    ]);
+    return { items, total, skip, take };
   }
 
   async findOne(id: string) {

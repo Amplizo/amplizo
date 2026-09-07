@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -37,6 +37,8 @@ model Agent {
   assignmentsReceived CustomerAssignment[] @relation("AssignmentEmployee")
   scheduledCalls   ScheduledCall[]
   sentFollowUps    FollowUp[] @relation("FollowUpSender")
+  subscriptions    Subscription[]
+  payments         Payment[]
 }
 
 model RefreshToken {
@@ -94,6 +96,9 @@ model Chat {
   @@index([visitorId])
   @@index([clientId])
   @@index([conversationState])
+  @@index([agentId, status])
+  @@index([clientId, status])
+  @@index([updatedAt])
 }
 
 model Message {
@@ -149,12 +154,17 @@ model AdminStats {
 }
 
 model OTP {
-  id        String   @id @default(uuid())
-  phone     String   @unique
-  otp       String
-  expiresAt DateTime
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id           String    @id @default(uuid())
+  phone        String    @unique
+  otpHash      String
+  expiresAt    DateTime
+  verified     Boolean   @default(false)
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(5)
+  ipAddress    String?
+  userAgent    String?
+  lastAttemptAt DateTime?
+  createdAt    DateTime  @default(now())
 }
 
 model PasswordReset {
@@ -185,7 +195,7 @@ model Client {
   externalPlatformId  String?  @unique
   joined              DateTime @default(now())
   createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  updatedAt           DateTime  @updatedAt
 
   purchases        Purchase[]
   followUpCycles   FollowUpCycle[]
@@ -200,6 +210,10 @@ model Client {
   @@index([phone])
   @@index([currentLeadStatus])
   @@index([assignedEmployeeId])
+  @@index([status])
+  @@index([plan])
+  @@index([city])
+  @@index([createdAt])
 }
 
 model Notification {
@@ -235,6 +249,7 @@ model Purchase {
 
   @@index([clientId])
   @@index([purchaseDate])
+  @@index([clientId, purchaseDate])
 }
 
 model FollowUpCycle {
@@ -255,27 +270,27 @@ model FollowUpCycle {
 }
 
 model FollowUp {
-  id                  String   @id @default(uuid())
+  id                  String    @id @default(uuid())
   cycleId             String
   cycle               FollowUpCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   clientId            String
-  client              Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client              Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   purchaseId          String
   followUpNumber      Int
   scheduledDate       DateTime
-  status              String   @default("PENDING")
+  status              String    @default("PENDING")
   assignedEmployeeId  String?
-  assignedEmployee    Agent?   @relation("FollowUpAssignee", fields: [assignedEmployeeId], references: [id])
+  assignedEmployee    Agent?    @relation("FollowUpAssignee", fields: [assignedEmployeeId], references: [id])
   notes               String?
   completedAt         DateTime?
   completedById       String?
-  completedBy         Agent?   @relation("FollowUpCompleter", fields: [completedById], references: [id])
+  completedBy         Agent?    @relation("FollowUpCompleter", fields: [completedById], references: [id])
   sentAt              DateTime?
   sentById            String?
-  sentBy              Agent?   @relation("FollowUpSender", fields: [sentById], references: [id])
+  sentBy              Agent?    @relation("FollowUpSender", fields: [sentById], references: [id])
   error               String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   smsLogs             SmsLog[]
 
@@ -283,6 +298,8 @@ model FollowUp {
   @@index([scheduledDate])
   @@index([status])
   @@index([assignedEmployeeId])
+  @@index([clientId, status, scheduledDate])
+  @@index([assignedEmployeeId, status, scheduledDate])
 }
 
 model ActivityLog {
@@ -464,5 +481,54 @@ model ScheduledCall {
   @@index([clientId])
   @@index([assignedEmployeeId])
   @@index([scheduledDate])
+}
+
+model Subscription {
+  id               String    @id @default(uuid())
+  agentId          String
+  agent            Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  planId           String
+  planName         String
+  status           String    @default("active") // active, cancelled, expired, pending, trial
+  amount           Float
+  currency         String    @default("INR")
+  interval         String    @default("month") // month, year
+  startedAt        DateTime  @default(now())
+  expiresAt        DateTime?
+  autoRenew        Boolean   @default(false)
+  canceledAt       DateTime?
+  paymentProvider  String?
+  providerPlanId   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  payments         Payment[]
+
+  @@index([agentId])
   @@index([status])
+}
+
+model Payment {
+  id                String    @id @default(uuid())
+  agentId           String
+  agent             Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
+  amount            Float
+  currency          String    @default("INR")
+  status            String    @default("pending") // pending, paid, failed, cancelled, refunded
+  paymentMethod     String?
+  provider          String?
+  providerOrderId   String?
+  providerPaymentId String?
+  providerSignature String?
+  receiptUrl        String?
+  errorMessage      String?
+  metadata          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([agentId])
+  @@index([providerOrderId])
+  @@index([providerPaymentId])
 }

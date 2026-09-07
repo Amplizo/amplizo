@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { WhatsAppService } from "./whatsapp.service";
+import { NotificationService } from "../notification/notification.service";
 
 @Injectable()
 export class WhatsAppBusinessService {
@@ -9,6 +10,7 @@ export class WhatsAppBusinessService {
   constructor(
     private prisma: PrismaService,
     private wa: WhatsAppService,
+    private notificationService: NotificationService,
   ) {}
 
   private normalizePhone(p: string) {
@@ -325,6 +327,15 @@ export class WhatsAppBusinessService {
       ownerAgentId = admin.id;
       resolvedVia = "admin_unassigned";
       this.logger.warn(`Inbound ${phone} -> ADMIN UNASSIGNED POOL (admin ${admin.id}). Tenant cannot be determined safely.`);
+      try {
+        await this.notificationService.createForAgent(admin.id, {
+          type: "unassigned_lead",
+          title: "New unassigned WhatsApp lead",
+          message: `A message from ${payload.profileName || phone} could not be mapped to any tenant and is now in the unassigned pool.`,
+          link: `/whatsapp?status=UNASSIGNED`,
+          metadata: JSON.stringify({ phone, dedupKey: payload.dedupKey, resolvedVia }),
+        });
+      } catch {}
     }
 
     // Get/create conversation

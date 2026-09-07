@@ -25,6 +25,7 @@ describe("AuthService", () => {
       upsert: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+      count: jest.fn(),
     },
     passwordReset: {
       upsert: jest.fn(),
@@ -38,6 +39,11 @@ describe("AuthService", () => {
     verify: jest.fn().mockReturnValue({ sub: "user-id", email: "test@test.com", role: "agent" }),
   };
 
+  const mockSms = {
+    sendOtpSms: jest.fn().mockResolvedValue({ success: true }),
+    sendSms: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -45,7 +51,7 @@ describe("AuthService", () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwt },
         { provide: EmailService, useValue: { sendEmail: jest.fn(), sendPasswordResetEmail: jest.fn() } },
-        { provide: SmsService, useValue: { sendOtpSms: jest.fn(), sendSms: jest.fn() } },
+        { provide: SmsService, useValue: mockSms },
       ],
     }).compile();
 
@@ -59,6 +65,7 @@ describe("AuthService", () => {
   describe("sendOtp", () => {
     it("should send OTP successfully", async () => {
       mockPrisma.oTP.upsert.mockResolvedValue({});
+      (mockPrisma as any).sendOtpSms = jest.fn().mockResolvedValue({ success: true });
       const result = await service.sendOtp("+919876543210");
       expect(result.success).toBe(true);
       expect(result.message).toContain("OTP sent");
@@ -67,7 +74,7 @@ describe("AuthService", () => {
 
   describe("verifyOtp", () => {
     it("should verify OTP and return tokens", async () => {
-      mockPrisma.oTP.findUnique.mockResolvedValue({ phone: "+919876543210", otp: "123456", expiresAt: new Date(Date.now() + 300000) });
+      mockPrisma.oTP.findUnique.mockResolvedValue({ phone: "+919876543210", otpHash: "09fe05790eef875403ce366a6fb98d9f56f4b1ad934c2d79a72be5f1edc92d61", expiresAt: new Date(Date.now() + 300000), verified: false, attempts: 0, maxAttempts: 5 });
       mockPrisma.oTP.update.mockResolvedValue({});
       mockPrisma.agent.findFirst.mockResolvedValue(null);
       mockPrisma.agent.create.mockResolvedValue({ id: "new-agent-id", name: "+919876543210", email: "+919876543210@phone.com", role: "agent", status: "online", createdAt: new Date() });

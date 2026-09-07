@@ -8,19 +8,25 @@ import { BarChart3, Users, MessageCircle, TrendingUp, Clock, Star, ArrowUpRight,
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<any>(null);
   const [period, setPeriod] = useState<"7d" | "30d" | "90d">("30d");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getAdminStats();
+      setStats(data);
+    } catch (e: any) {
+      setError(e?.message || "Failed to load analytics");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchAnalytics();
   }, [period]);
-
-  const fetchAnalytics = async () => {
-    try {
-      const data = await api.getAdminStats();
-      setStats(data);
-    } catch {
-      setStats({ totalVisitors: 1247, activeChats: 18, closedChatsToday: 45, onlineAgents: 4, totalMessages: 8934, storageUsedMB: 234.5, avgResponseTimeSec: 12, satisfactionRate: 94 });
-    }
-  };
 
   const metrics = [
     { label: "Total Visitors", value: stats?.totalVisitors || 0, change: 12, icon: Users, color: "blue" },
@@ -31,9 +37,14 @@ export default function AnalyticsPage() {
     { label: "Online Agents", value: stats?.onlineAgents || 0, change: 0, icon: Users, color: "teal" },
   ];
 
+  const chatVolume = stats?.chatVolume || [];
+  const topAgents = stats?.topAgents || [];
+
   return (
     <DashboardLayout title="Analytics" subtitle="Track performance and engagement metrics">
       <BackButton className="mb-3" />
+      {loading && <div className="text-sm text-gray-500 mb-4">Loading analytics...</div>}
+      {error && <div className="text-sm text-red-600 mb-4">{error} <button onClick={fetchAnalytics} className="underline ml-2">Retry</button></div>}
       <div className="space-y-6">
         <div className="flex gap-2">
           {(["7d", "30d", "90d"] as const).map((p) => (
@@ -69,37 +80,42 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Chat Volume</h3>
-            <div className="h-48 flex items-end gap-2">
-              {[65, 45, 78, 52, 88, 72, 95].map((height, i) => (
-                <div key={i} className="flex-1 bg-gradient-to-t from-brand-500 to-brand-400 rounded-t-lg transition-all hover:from-brand-600 hover:to-brand-500" style={{ height: `${height}%` }} />
-              ))}
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-gray-500">
-              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-            </div>
+            {chatVolume.length > 0 ? (
+              <div className="h-48 flex items-end gap-2">
+                {chatVolume.map((item: any, i: number) => {
+                  const max = Math.max(...chatVolume.map((v: any) => v.count), 1);
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                      <div className="w-full bg-gradient-to-t from-brand-500 to-brand-400 rounded-t-lg transition-all hover:from-brand-600 hover:to-brand-500" style={{ height: `${Math.max((item.count / max) * 100, 4)}%` }} />
+                      <span className="text-xs text-gray-500">{item.day}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-gray-500 text-sm">No chat volume data available</div>
+            )}
           </div>
 
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Agents</h3>
-            <div className="space-y-3">
-              {[
-                { name: "Sarah Johnson", chats: 47, satisfaction: 98 },
-                { name: "Mike Chen", chats: 38, satisfaction: 95 },
-                { name: "AI Receptionist", chats: 340, satisfaction: 91 },
-                { name: "Emily Davis", chats: 29, satisfaction: 97 },
-              ].map((agent, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 flex items-center justify-center text-xs font-bold">{i + 1}</span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{agent.name}</span>
+            {topAgents.length > 0 ? (
+              <div className="space-y-3">
+                {topAgents.map((agent: any, i: number) => (
+                  <div key={agent.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{agent.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-gray-500">{agent._count.chats} chats</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-gray-500">{agent.chats} chats</span>
-                    <span className="text-green-600">{agent.satisfaction}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-gray-500 text-sm">No agent data available</div>
+            )}
           </div>
         </div>
       </div>

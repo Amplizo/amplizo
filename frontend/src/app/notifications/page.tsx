@@ -10,6 +10,9 @@ export default function NotificationsPage() {
   const { agent } = useAuthStore();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [skip, setSkip] = useState(0);
+  const [total, setTotal] = useState(0);
+  const take = 20;
 
   useEffect(() => {
     fetchNotifications();
@@ -17,12 +20,15 @@ export default function NotificationsPage() {
 
   const fetchNotifications = async () => {
     try {
-      const data = await api.getNotifications();
-      setNotifications(data);
+      const data = await api.getNotifications(filter === "unread", take, skip);
+      setNotifications(data.items || []);
+      setTotal(data.total || 0);
     } catch {
       setNotifications([]);
     }
   };
+
+  useEffect(() => { fetchNotifications(); }, [skip, filter]);
 
   const markAsRead = async (id: string) => {
     try {
@@ -40,6 +46,14 @@ export default function NotificationsPage() {
 
   const filtered = filter === "unread" ? notifications.filter(n => !n.read) : notifications;
   const unreadCount = notifications.filter(n => !n.read).length;
+  const totalPages = Math.max(1, Math.ceil(total / take));
+  const currentPage = Math.floor(skip / take) + 1;
+  const goToPage = (page: number) => {
+    const p = Math.max(1, Math.min(totalPages, page));
+    setSkip((p - 1) * take);
+  };
+
+  useEffect(() => { setSkip(0); }, [filter]);
 
   return (
     <DashboardLayout title="Notifications" subtitle={`${unreadCount} unread notifications`}>
@@ -80,6 +94,32 @@ export default function NotificationsPage() {
             </div>
           )}
         </div>
+        {total > take && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-xs text-gray-500">
+              Showing {skip + 1}–{Math.min(skip + take, total)} of {total}
+            </p>
+            <div className="inline-flex items-center gap-1">
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

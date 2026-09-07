@@ -29,73 +29,77 @@ export class PurchaseService {
 
     const purchaseDate = data.purchaseDate || new Date();
 
-    const activeCycles = await this.prisma.followUpCycle.findMany({
-      where: { clientId: data.clientId, status: "ACTIVE" },
-      include: { followUps: true },
-    });
-    for (const cycle of activeCycles) {
-      await this.prisma.followUp.updateMany({
-        where: { cycleId: cycle.id, status: "PENDING" },
-        data: { status: "CANCELLED" },
+    const result = await this.prisma.$transaction(async (tx) => {
+      const activeCycles = await tx.followUpCycle.findMany({
+        where: { clientId: data.clientId, status: "ACTIVE" },
+        include: { followUps: true },
       });
-      await this.prisma.followUpCycle.update({
-        where: { id: cycle.id },
-        data: { status: "CANCELLED", cancelledReason: "New Purchase" },
-      });
-    }
-
-    const purchase = await this.prisma.purchase.create({
-      data: {
-        clientId: data.clientId,
-        purchaseAmount: data.purchaseAmount,
-        productDetails: data.productDetails,
-        purchaseDate,
-        createdById: actorId,
-      },
-    });
-
-    const cycle = await this.prisma.followUpCycle.create({
-      data: {
-        clientId: data.clientId,
-        purchaseId: purchase.id,
-        status: "ACTIVE",
-      },
-    });
-
-    const followUps = await Promise.all(
-      FOLLOW_UP_OFFSETS.map((offset) => {
-        const scheduledDate = new Date(purchaseDate);
-        scheduledDate.setDate(scheduledDate.getDate() + offset.days);
-        scheduledDate.setHours(10, 0, 0, 0);
-        return this.prisma.followUp.create({
-          data: {
-            cycleId: cycle.id,
-            clientId: data.clientId,
-            purchaseId: purchase.id,
-            followUpNumber: offset.number,
-            scheduledDate,
-            status: "PENDING",
-            assignedEmployeeId: client.assignedEmployeeId,
-          },
+      for (const cycle of activeCycles) {
+        await tx.followUp.updateMany({
+          where: { cycleId: cycle.id, status: "PENDING" },
+          data: { status: "CANCELLED" },
         });
-      }),
-    );
+        await tx.followUpCycle.update({
+          where: { id: cycle.id },
+          data: { status: "CANCELLED", cancelledReason: "New Purchase" },
+        });
+      }
+
+      const purchase = await tx.purchase.create({
+        data: {
+          clientId: data.clientId,
+          purchaseAmount: data.purchaseAmount,
+          productDetails: data.productDetails,
+          purchaseDate,
+          createdById: actorId,
+        },
+      });
+
+      const cycle = await tx.followUpCycle.create({
+        data: {
+          clientId: data.clientId,
+          purchaseId: purchase.id,
+          status: "ACTIVE",
+        },
+      });
+
+      const followUps = await Promise.all(
+        FOLLOW_UP_OFFSETS.map((offset) => {
+          const scheduledDate = new Date(purchaseDate);
+          scheduledDate.setDate(scheduledDate.getDate() + offset.days);
+          scheduledDate.setHours(10, 0, 0, 0);
+          return tx.followUp.create({
+            data: {
+              cycleId: cycle.id,
+              clientId: data.clientId,
+              purchaseId: purchase.id,
+              followUpNumber: offset.number,
+              scheduledDate,
+              status: "PENDING",
+              assignedEmployeeId: client.assignedEmployeeId,
+            },
+          });
+        }),
+      );
+
+      return { purchase, cycle, followUps, activeCycles };
+    });
 
     await this.activityLog.log({
       clientId: data.clientId,
       userId: actorId,
       activityType: "PURCHASE_CREATED",
       description: `Purchase created for ₹${data.purchaseAmount.toLocaleString("en-IN")}${data.productDetails ? ` (${data.productDetails})` : ""}`,
-      metadata: { purchaseId: purchase.id, amount: data.purchaseAmount },
+      metadata: { purchaseId: result.purchase.id, amount: data.purchaseAmount },
     });
 
-    if (activeCycles.length > 0) {
+    if (result.activeCycles.length > 0) {
       await this.activityLog.log({
         clientId: data.clientId,
         userId: actorId,
         activityType: "FOLLOWUP_CANCELLED",
-        description: `${activeCycles.length} previous follow-up cycle(s) cancelled due to new purchase`,
-        metadata: { cancelledCycleIds: activeCycles.map((c) => c.id) },
+        description: `${result.activeCycles.length} previous follow-up cycle(s) cancelled due to new purchase`,
+        metadata: { cancelledCycleIds: result.activeCycles.map((c) => c.id) },
       });
     }
 
@@ -104,18 +108,24 @@ export class PurchaseService {
       userId: actorId,
       activityType: "FOLLOWUP_CREATED",
       description: `New follow-up cycle created with 3 follow-ups (3, 7, 15 days)`,
-      metadata: { cycleId: cycle.id, followUpIds: followUps.map((f) => f.id) },
+      metadata: { cycleId: result.cycle.id, followUpIds: result.followUps.map((f) => f.id) },
     });
 
-    return { purchase, cycle, followUps };
+    return result;
   }
 
-  async findByClient(clientId: string) {
-    return this.prisma.purchase.findMany({
-      where: { clientId },
-      orderBy: { purchaseDate: "desc" },
-      include: { createdBy: { select: { id: true, name: true } } },
-    });
+  async findByClient(clientId: string, skip = 0, take = 50) {
+    const [items, total] = await Promise.all([
+      this.prisma.purchase.findMany({
+        where: { clientId },
+        skip,
+        take,
+        orderBy: { purchaseDate: "desc" },
+        include: { createdBy: { select: { id: true, name: true } } },
+      }),
+      this.prisma.purchase.count({ where: { clientId } }),
+    ]);
+    return { items, total, skip, take };
   }
 
   async findOne(id: string) {

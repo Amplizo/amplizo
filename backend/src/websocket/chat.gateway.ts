@@ -7,6 +7,7 @@ import { MessageService } from "../chat/message.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { AiService } from "../crm/ai.service";
 import { ActivityLogService } from "../crm/activity-log.service";
+import { NotificationService } from "../notification/notification.service";
 
 @WebSocketGateway({ cors: { origin: ["http://localhost:3000", "http://localhost:3001"], methods: ["GET", "POST"] } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -20,6 +21,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private prisma: PrismaService,
     private aiService: AiService,
     private activityLog: ActivityLogService,
+    private notificationService: NotificationService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -81,7 +83,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const intent = this.aiService.detectBuyingIntent(data.content);
       if (intent.isInterested) {
-        // Mark as hot lead + trigger handover
         if (chat.clientId) {
           await this.prisma.client.update({ where: { id: chat.clientId }, data: { currentLeadStatus: "HOT_LEAD" } });
           await this.activityLog.log({
@@ -89,6 +90,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             activityType: "LEAD_STATUS_CHANGED",
             description: `Auto-marked as HOT LEAD from chat (keywords: ${intent.matchedKeywords.join(", ")})`,
           });
+          if (chat.agentId) {
+            await this.prisma.client.update({
+              where: { id: chat.clientId },
+              data: { assignedEmployeeId: chat.agentId },
+            });
+            await this.notificationService.createForAgent(chat.agentId, {
+              type: "handover",
+              title: "Hot lead handover triggered",
+              message: `A visitor on chat ${chat.id} showed buying intent and was marked as HOT LEAD. Please take over the conversation.`,
+              link: `/chats/${chat.id}`,
+              metadata: JSON.stringify({ chatId: chat.id, clientId: chat.clientId, reason: "buying_intent" }),
+            });
+          }
         }
         await this.prisma.chat.update({ where: { id: data.chatId }, data: { conversationState: "WAITING_FOR_HUMAN" } });
         this.server.to(`chat:${data.chatId}`).emit("conversation:state", { chatId: data.chatId, state: "WAITING_FOR_HUMAN" });
@@ -101,7 +115,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const aiMessage = await this.messageService.create(data.chatId, { content: aiReply }, "ai_assistant", "ai");
       this.server.to(`chat:${data.chatId}`).emit("message:new", aiMessage);
     } catch (error) {
-      client.emit("error", { message: "Failed to send message", error: error.message });
+      client.emit("error", { message: "Failed to send message" });
     }
   }
 

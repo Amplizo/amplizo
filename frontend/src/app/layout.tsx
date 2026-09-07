@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import { WebVitals } from "@/components/common/WebVitals";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ToastProvider } from "@/components/common/ToastProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -57,7 +58,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Suspense fallback={null}>
             <WebVitals />
           </Suspense>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -3,6 +3,16 @@ import axios, { AxiosInstance } from "axios";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:4000";
 
+let toastCallback: ((type: "success" | "error", message: string) => void) | null = null;
+
+export function setToastCallback(cb: (type: "success" | "error", message: string) => void) {
+  toastCallback = cb;
+}
+
+function showToast(type: "success" | "error", message: string) {
+  if (toastCallback) toastCallback(type, message);
+}
+
 class ApiService {
   private client: AxiosInstance;
 
@@ -40,6 +50,11 @@ class ApiService {
             }
           }
         }
+        const status = error.response?.status;
+        const message = error.response?.data?.message || error.message || "Request failed";
+        if (status && status !== 401) {
+          showToast("error", message);
+        }
         return Promise.reject(error);
       }
     );
@@ -55,7 +70,7 @@ class ApiService {
   }
 
   async signup(name: string, email: string, password: string) {
-    const { data } = await this.client.post("/signup", { name, email, password });
+    const { data } = await this.client.post("/auth/signup", { name, email, password });
     if (typeof window !== "undefined") {
       localStorage.setItem("amplizo_token", data.token);
       localStorage.setItem("amplizo_refresh", data.refreshToken);
@@ -237,8 +252,8 @@ class ApiService {
     return data;
   }
 
-  async getNotifications(unreadOnly?: boolean) {
-    const { data } = await this.client.get("/notifications", { params: { unread: unreadOnly ? "true" : undefined } });
+  async getNotifications(unreadOnly?: boolean, take = 20, skip = 0) {
+    const { data } = await this.client.get("/notifications", { params: { unread: unreadOnly ? "true" : undefined, take, skip } });
     return data;
   }
 
@@ -276,6 +291,23 @@ class ApiService {
   async getCustomerStats() {
     const { data } = await this.client.get("/customers/stats");
     return data;
+  }
+
+  async importCustomers(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await this.client.post("/crm/import/customers", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  }
+
+  async exportCustomers(format: "csv" | "xlsx" = "csv") {
+    const response = await this.client.get(`/crm/export/customers`, {
+      params: { format },
+      responseType: "blob",
+    });
+    return response.data;
   }
 
   async getCustomerById(id: string) {
@@ -409,6 +441,42 @@ class ApiService {
 
   async aiRespond(message: string, context?: any) {
     const { data } = await this.client.post("/ai/respond", { message, context });
+    return data;
+  }
+
+  // ===== Subscription =====
+  async getMySubscription() {
+    const { data } = await this.client.get("/subscriptions/me");
+    return data;
+  }
+
+  async getSubscriptionPlans() {
+    const { data } = await this.client.get("/subscriptions/plans");
+    return data;
+  }
+
+  async createCheckout(planId: string) {
+    const { data } = await this.client.post("/subscriptions/checkout", { planId });
+    return data;
+  }
+
+  async verifyPayment(orderId: string, paymentId: string, signature: string) {
+    const { data } = await this.client.post("/subscriptions/verify", { orderId, paymentId, signature });
+    return data;
+  }
+
+  async cancelSubscription() {
+    const { data } = await this.client.post("/subscriptions/cancel");
+    return data;
+  }
+
+  async reactivateSubscription() {
+    const { data } = await this.client.post("/subscriptions/reactivate");
+    return data;
+  }
+
+  async getPayments() {
+    const { data } = await this.client.get("/subscriptions/payments");
     return data;
   }
 

@@ -15,10 +15,22 @@ async function bootstrap() {
   const logger = app.get(WinstonLogger);
   app.useLogger(logger);
 
-  app.use(helmet());
-  app.setGlobalPrefix("api");
+  if (process.env.NODE_ENV === "production") {
+    const required = ["JWT_SECRET", "DATABASE_URL", "META_WEBHOOK_VERIFY_TOKEN"];
+    const missing = required.filter((key) => !process.env[key]);
+    if (missing.length > 0) {
+      logger.error(`Missing required environment variables: ${missing.join(", ")}`);
+      process.exit(1);
+    }
+    if (!process.env.ALLOWED_ORIGINS) {
+      logger.error("ALLOWED_ORIGINS must be set in production");
+      process.exit(1);
+    }
+  }
 
+  app.use(helmet());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+  app.setGlobalPrefix("api");
   app.useGlobalFilters(new AllExceptionsFilter());
 
   const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : ["http://localhost:3000", "http://localhost:3001"];

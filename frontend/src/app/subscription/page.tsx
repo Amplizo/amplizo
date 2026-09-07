@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BackButton } from "@/components/ui/BackButton";
 import { CheckCircle2, XCircle, CreditCard, Calendar, Zap, Users, MessageSquare, BarChart3, Shield, Phone, ArrowUpRight, Loader2, Sparkles, Crown } from "lucide-react";
 import { useAuthStore } from "@/store";
+import api from "@/lib/api";
 
 interface Plan {
   id: string;
@@ -76,8 +77,8 @@ const PLANS: Plan[] = [
 ];
 
 interface SubscriptionState {
-  plan: "free" | "pro" | "enterprise";
-  status: "active" | "cancelled" | "expired" | "trial";
+  plan: string;
+  status: string;
   startedAt: string;
   expiresAt: string | null;
   autoRenew: boolean;
@@ -93,88 +94,154 @@ export default function SubscriptionPage() {
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [showPayment, setShowPayment] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
+  const [razorpayKeyId, setRazorpayKeyId] = useState<string | null>(null);
+  const [razorpayOrderId, setRazorpayOrderId] = useState<string | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSubscription();
   }, []);
 
-  const loadSubscription = () => {
+  const loadSubscription = async () => {
+    setLoading(true);
     try {
-      const saved = localStorage.getItem("amplizo_subscription");
-      if (saved) {
-        setSubscription(JSON.parse(saved));
-      } else {
-        // Default subscription based on role
-        const isEnterprise = agent?.email?.includes("enterprise") || agent?.email?.includes("admin");
-        const defaultSub: SubscriptionState = isEnterprise
-          ? { plan: "enterprise", status: "active", startedAt: new Date().toISOString(), expiresAt: null, autoRenew: true, paymentMethod: "Invoice", amount: 2999 }
-          : { plan: "free", status: "active", startedAt: new Date().toISOString(), expiresAt: null, autoRenew: false, paymentMethod: null, amount: 0 };
-        setSubscription(defaultSub);
-        localStorage.setItem("amplizo_subscription", JSON.stringify(defaultSub));
-      }
-    } catch {}
+      const data = await api.getMySubscription();
+      const sub: SubscriptionState = {
+        plan: data.planId || "free",
+        status: data.status || "active",
+        startedAt: data.startedAt || new Date().toISOString(),
+        expiresAt: data.expiresAt || null,
+        autoRenew: data.autoRenew || false,
+        paymentMethod: data.paymentProvider || null,
+        amount: data.amount || 0,
+      };
+      setSubscription(sub);
+    } catch {
+      setSubscription({ plan: "free", status: "active", startedAt: new Date().toISOString(), expiresAt: null, autoRenew: false, paymentMethod: null, amount: 0 });
+    }
     setLoading(false);
   };
 
-  const saveSubscription = (sub: SubscriptionState) => {
-    setSubscription(sub);
-    localStorage.setItem("amplizo_subscription", JSON.stringify(sub));
+  const loadRazorpayScript = (keyId: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === "undefined") {
+        reject(new Error("Window is undefined"));
+        return;
+      }
+      const existingScript = document.querySelector(`script[src*="razorpay"]`);
+      if (existingScript) {
+        resolve();
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = `https://checkout.razorpay.com/v1/checkout.js`;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load Razorpay script"));
+      document.body.appendChild(script);
+    });
   };
 
-  const handleSelectPlan = (plan: Plan) => {
+  const handleSelectPlan = async (plan: Plan) => {
     if (plan.id === subscription?.plan) {
       setSuccessMsg(`You are already on the ${plan.name} plan`);
       setTimeout(() => setSuccessMsg(""), 3000);
       return;
     }
     if (plan.id === "free") {
-      // Downgrade to free
-      const newSub: SubscriptionState = { plan: "free", status: "active", startedAt: new Date().toISOString(), expiresAt: null, autoRenew: false, paymentMethod: null, amount: 0 };
-      saveSubscription(newSub);
-      setSuccessMsg("Downgraded to Free plan");
-      setTimeout(() => setSuccessMsg(""), 3000);
+      try {
+        setUpgrading("free");
+        await api.cancelSubscription();
+        setSubscription({ plan: "free", status: "active", startedAt: new Date().toISOString(), expiresAt: null, autoRenew: false, paymentMethod: null, amount: 0 });
+        setSuccessMsg("Downgraded to Free plan");
+        setTimeout(() => setSuccessMsg(""), 3000);
+      } catch (e: any) {
+        setSuccessMsg(e?.response?.data?.message || "Failed to downgrade");
+      } finally {
+        setUpgrading(null);
+      }
       return;
     }
     setShowPayment(plan.id);
+    setSuccessMsg("");
   };
 
-  const handlePayment = (planId: string) => {
+  const handlePayment = async (planId: string) => {
     setUpgrading(planId);
-    setTimeout(() => {
-      const plan = PLANS.find(p => p.id === planId);
-      if (!plan) return;
-      const expires = new Date();
-      expires.setMonth(expires.getMonth() + 1);
-      const newSub: SubscriptionState = {
-        plan: planId as any,
-        status: "active",
-        startedAt: new Date().toISOString(),
-        expiresAt: expires.toISOString(),
-        autoRenew: true,
-        paymentMethod: "Card ending 4242",
-        amount: plan.price,
+    setSuccessMsg("");
+    try {
+      const data = await api.createCheckout(planId);
+      if (!data.razorpayKeyId || !data.payment?.providerOrderId) {
+        throw new Error("Payment configuration error");
+      }
+
+      setRazorpayKeyId(data.razorpayKeyId);
+      setRazorpayOrderId(data.payment.providerOrderId);
+      setPaymentId(data.payment.id);
+
+      await loadRazorpayScript(data.razorpayKeyId);
+
+      const options = {
+        key: data.razorpayKeyId,
+        amount: data.payment.amount * 100,
+        currency: data.payment.currency,
+        name: "Amplizo",
+        description: `${data.plan.name} Plan Subscription`,
+        order_id: data.payment.providerOrderId,
+        prefill: {
+          name: agent?.name || "",
+          email: agent?.email || "",
+        },
+        handler: async (response: any) => {
+          try {
+            await api.verifyPayment(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+            setSuccessMsg("Payment successful! Subscription activated.");
+            await loadSubscription();
+            setShowPayment(null);
+          } catch (e: any) {
+            setSuccessMsg(e?.response?.data?.message || "Payment verification failed");
+          } finally {
+            setUpgrading(null);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setUpgrading(null);
+          },
+        },
       };
-      saveSubscription(newSub);
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (e: any) {
+      setSuccessMsg(e?.response?.data?.message || e?.message || "Payment failed");
       setUpgrading(null);
-      setShowPayment(null);
-      setSuccessMsg(`Successfully upgraded to ${plan.name} plan!`);
-      setTimeout(() => setSuccessMsg(""), 4000);
-    }, 1500);
+    }
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (!subscription) return;
     if (!confirm("Are you sure you want to cancel auto-renewal? Your plan stays active until expiry.")) return;
-    saveSubscription({ ...subscription, autoRenew: false });
-    setSuccessMsg("Auto-renewal cancelled. Plan stays active until expiry.");
-    setTimeout(() => setSuccessMsg(""), 3000);
+    try {
+      await api.cancelSubscription();
+      setSubscription({ ...subscription, autoRenew: false });
+      setSuccessMsg("Auto-renewal cancelled. Plan stays active until expiry.");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (e: any) {
+      setSuccessMsg(e?.response?.data?.message || "Failed to cancel");
+    }
   };
 
-  const handleReactivate = () => {
+  const handleReactivate = async () => {
     if (!subscription) return;
-    saveSubscription({ ...subscription, autoRenew: true });
-    setSuccessMsg("Auto-renewal reactivated!");
-    setTimeout(() => setSuccessMsg(""), 3000);
+    try {
+      await api.reactivateSubscription();
+      setSubscription({ ...subscription, autoRenew: true });
+      setSuccessMsg("Auto-renewal reactivated!");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (e: any) {
+      setSuccessMsg(e?.response?.data?.message || "Failed to reactivate");
+    }
   };
 
   const formatDate = (iso: string | null) => {
@@ -198,7 +265,7 @@ export default function SubscriptionPage() {
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         <BackButton className="mb-2" fallback={agent?.role === "admin" ? "/dashboard" : "/client-dashboard"} />
         {successMsg && (
-          <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 flex items-center gap-3">
+          <div className={`p-4 rounded-xl flex items-center gap-3 ${successMsg.includes("successful") || successMsg.includes("reactivated") || successMsg.includes("Downgraded") ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800" : "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800"}`}>
             <CheckCircle2 className="w-5 h-5" />
             <p className="text-sm font-medium">{successMsg}</p>
           </div>
@@ -254,7 +321,7 @@ export default function SubscriptionPage() {
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">Choose Your Plan</h2>
           <p className="text-sm text-gray-500 mb-6">Upgrade or downgrade at any time</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PLANS.map(plan => {
+            {PLANS.map((plan) => {
               const isCurrent = subscription?.plan === plan.id;
               return (
                 <div
@@ -345,30 +412,21 @@ export default function SubscriptionPage() {
 
       {showPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowPayment(null)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Complete Payment</h3>
-              <p className="text-sm text-gray-500 mt-1">Upgrade to {PLANS.find(p => p.id === showPayment)?.name} - ₹{PLANS.find(p => p.id === showPayment)?.price}/month</p>
+              <p className="text-sm text-gray-500 mt-1">Upgrade to {PLANS.find((p) => p.id === showPayment)?.name} - ₹{PLANS.find((p) => p.id === showPayment)?.price}/month</p>
             </div>
             <div className="p-6 space-y-3">
-              <div>
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">Card Number</label>
-                <input type="text" defaultValue="4242 4242 4242 4242" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">Expiry</label>
-                  <input type="text" defaultValue="12/27" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">CVV</label>
-                  <input type="text" defaultValue="123" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm" />
-                </div>
-              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                You will be redirected to Razorpay to complete your payment securely.
+              </p>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowPayment(null)} className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">Cancel</button>
+                <button type="button" onClick={() => setShowPayment(null)} className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800">
+                  Cancel
+                </button>
                 <button onClick={() => handlePayment(showPayment)} disabled={upgrading !== null} className="flex-1 px-4 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 flex items-center justify-center gap-2">
-                  {upgrading ? <><Loader2 className="w-4 h-4 animate-spin" />Processing</> : "Pay Now"}
+                  {upgrading ? <><Loader2 className="w-4 h-4 animate-spin" />Processing</> : "Proceed to Payment"}
                 </button>
               </div>
             </div>

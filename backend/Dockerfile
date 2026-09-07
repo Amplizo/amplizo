@@ -16,4 +16,4 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/uploads ./uploads
 EXPOSE 4000
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]

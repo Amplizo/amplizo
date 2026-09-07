@@ -3,8 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BackButton } from "@/components/ui/BackButton";
 import { FileDown, Download, Filter, CheckCircle2, AlertCircle, Loader2, Search } from "lucide-react";
-import { api } from "@/lib/api";
-import * as XLSX from "xlsx";
+import api from "@/lib/api";
 
 interface ExportCustomer {
   id: string;
@@ -20,7 +19,6 @@ interface ExportCustomer {
   totalSpent?: number;
   purchaseCount?: number;
   purchases?: { purchaseAmount: number; productDetails?: string | null; purchaseDate?: string }[];
-  followUps?: any[];
   assignedEmployee?: { name?: string; email?: string } | null;
 }
 
@@ -83,57 +81,23 @@ export default function DataExportPage() {
   };
   const formatDate = (d?: string) => (d ? new Date(d).toISOString().split("T")[0] : "");
 
-  const buildRows = () => {
-    return filtered.map((c) => {
-      const lp = lastPurchase(c);
-      const totalSpent = typeof c.totalSpent === "number" ? c.totalSpent : 0;
-      const purchaseCount = typeof c.purchaseCount === "number" ? c.purchaseCount : (c.purchases || []).length;
-      return {
-        Name: c.name || "",
-        Phone: c.phone || "",
-        Email: c.email || "",
-        City: c.city || "",
-        Source: c.source || "",
-        Status: c.status || "",
-        "Lead Status": c.currentLeadStatus || "",
-        "Purchase Count": purchaseCount,
-        "Latest Purchase Amount": lp ? Number(lp.purchaseAmount) : 0,
-        "Total Spent": totalSpent,
-        "Product/Item": lp?.productDetails || "",
-        "Assigned To": c.assignedEmployee?.name || "",
-        "Created Date": formatDate(c.createdAt),
-      };
-    });
-  };
-
-  const handleExport = () => {
+  const handleExport = async () => {
     if (filtered.length === 0) return;
     setExporting(true);
     try {
-      const rows = buildRows();
-      const filename = `customers-export-${new Date().toISOString().split("T")[0]}`;
-
-      if (exportFormat === "xlsx") {
-        const ws = XLSX.utils.json_to_sheet(rows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Customers");
-        XLSX.writeFile(wb, `${filename}.xlsx`);
-      } else {
-        const headers = Object.keys(rows[0] || {});
-        const csvRows = [headers, ...rows.map((r) => headers.map((h) => r[h as keyof typeof r]))];
-        const csv = csvRows
-          .map((r) => r.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
-          .join("\r\n");
-        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${filename}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
+      const blob = await api.exportCustomers(exportFormat);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `customers-export-${new Date().toISOString().split("T")[0]}.${exportFormat}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+    } catch (e: any) {
+      setError(e?.message || "Export failed");
     } finally {
       setExporting(false);
     }

@@ -127,7 +127,16 @@ export class CustomerService {
     if (!isAdmin && client.assignedEmployeeId !== actorId) {
       throw new NotFoundException("Customer not found");
     }
-    return client;
+    const aggregates = await this.prisma.purchase.aggregate({
+      where: { clientId: id },
+      _sum: { purchaseAmount: true },
+      _count: { _all: true },
+    });
+    return {
+      ...client,
+      totalSpent: Number(aggregates._sum.purchaseAmount || 0),
+      purchaseCount: aggregates._count._all,
+    };
   }
 
   async create(data: {

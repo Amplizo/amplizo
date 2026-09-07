@@ -60,7 +60,7 @@ Amplizo is an **independent AI-powered live chat platform** designed for modern 
 
 ### Backend
 - **Framework:** NestJS 10
-- **Database:** SQLite (Prisma ORM)
+- **Database:** PostgreSQL (Prisma ORM)
 - **Authentication:** JWT, OAuth (Google, Facebook)
 - **Real-time:** WebSocket (Socket.io)
 - **Queue:** Bull (Redis - optional)
@@ -123,8 +123,12 @@ amplizo/
    # Edit .env with your configuration
    ```
 
-4. **Run database migrations**
+4. **Setup database**
    ```bash
+   # Ensure PostgreSQL is running and create the database:
+   # psql -U postgres -c "CREATE DATABASE amplizo;"
+   
+   # Run migrations
    npx prisma migrate dev
    npm run seed
    ```
@@ -161,21 +165,12 @@ amplizo/
 
 ### Backend (.env)
 ```env
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="your-secret-key"
-JWT_EXPIRES_IN="15m"
-PORT=4000
-FRONTEND_URL="http://localhost:3000"
+# Database (PostgreSQL required for production)
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 
-# OAuth
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-secret"
-FACEBOOK_APP_ID="your-facebook-app-id"
-FACEBOOK_APP_SECRET="your-facebook-secret"
-
-# Redis (optional)
-REDIS_ENABLED="false"
-REDIS_URL="redis://localhost:6379"
+# For local development with SQLite (optional):
+# DATABASE_URL="file:./dev.db"
+# Note: You must also change provider = "sqlite" in prisma/schema.prisma
 ```
 
 ### Frontend (.env.local)

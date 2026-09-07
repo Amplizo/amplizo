@@ -13,14 +13,14 @@ async function main() {
   await prisma.agent.upsert({ where: { email: "mike@amplizo.com" }, update: {}, create: { name: "Mike Chen", email: "mike@amplizo.com", password: agentPassword, role: "agent", status: "offline" } });
 
   const sampleClients = [
-    { name: "Rahul Verma", email: "rahul@company.com", phone: "+91 98765 43210", city: "Mumbai", plan: "Pro", status: "Active", chats: 45, satisfaction: 98 },
-    { name: "Priya Sharma", email: "priya@business.in", phone: "+91 87654 32109", city: "Delhi", plan: "Business", status: "Active", chats: 89, satisfaction: 96 },
-    { name: "Amit Kumar", email: "amit@startup.io", phone: "+91 76543 21098", city: "Bangalore", plan: "Pro", status: "Active", chats: 23, satisfaction: 94 },
-    { name: "Neha Patel", email: "neha@enterprise.com", phone: "+91 65432 10987", city: "Ahmedabad", plan: "Starter", status: "Trial", chats: 8, satisfaction: 92 },
-    { name: "Vikram Singh", email: "vikram@corp.in", phone: "+91 54321 09876", city: "Jaipur", plan: "Business", status: "Active", chats: 156, satisfaction: 97 },
-    { name: "Anita Desai", email: "anita@tech.co", phone: "+91 43210 98765", city: "Pune", plan: "Pro", status: "Active", chats: 67, satisfaction: 95 },
-    { name: "Suresh Reddy", email: "suresh@digital.in", phone: "+91 32109 87654", city: "Hyderabad", plan: "Business", status: "Active", chats: 234, satisfaction: 99 },
-    { name: "Meera Joshi", email: "meera@innovate.com", phone: "+91 21098 76543", city: "Chennai", plan: "Starter", status: "Trial", chats: 12, satisfaction: 88 },
+    { name: "Rahul Verma", email: "rahul@company.com", phone: "+91 98765 43210", city: "Mumbai", plan: "Pro", status: "Active", totalChats: 45, satisfaction: 98 },
+    { name: "Priya Sharma", email: "priya@business.in", phone: "+91 87654 32109", city: "Delhi", plan: "Business", status: "Active", totalChats: 89, satisfaction: 96 },
+    { name: "Amit Kumar", email: "amit@startup.io", phone: "+91 76543 21098", city: "Bangalore", plan: "Pro", status: "Active", totalChats: 23, satisfaction: 94 },
+    { name: "Neha Patel", email: "neha@enterprise.com", phone: "+91 65432 10987", city: "Ahmedabad", plan: "Starter", status: "Trial", totalChats: 8, satisfaction: 92 },
+    { name: "Vikram Singh", email: "vikram@corp.in", phone: "+91 54321 09876", city: "Jaipur", plan: "Business", status: "Active", totalChats: 156, satisfaction: 97 },
+    { name: "Anita Desai", email: "anita@tech.co", phone: "+91 43210 98765", city: "Pune", plan: "Pro", status: "Active", totalChats: 67, satisfaction: 95 },
+    { name: "Suresh Reddy", email: "suresh@digital.in", phone: "+91 32109 87654", city: "Hyderabad", plan: "Business", status: "Active", totalChats: 234, satisfaction: 99 },
+    { name: "Meera Joshi", email: "meera@innovate.com", phone: "+91 21098 76543", city: "Chennai", plan: "Starter", status: "Trial", totalChats: 12, satisfaction: 88 },
   ];
 
   for (const client of sampleClients) {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards, ForbiddenException, Req } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards, ForbiddenException } from "@nestjs/common";
 import { MessageService } from "./message.service";
 import { JwtAuthGuard } from "../auth/jwt.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
@@ -15,14 +15,15 @@ export class MessageController {
 
   @Get("chats/:chatId/messages")
   @UseGuards(JwtAuthGuard)
-  async findByChatId(@Req() req: RequestWithUser, @Param("chatId") chatId: string) {
+  async findByChatId(@Req() req: RequestWithUser, @Param("chatId") chatId: string, @Query("skip") skip?: string, @Query("take") take?: string) {
     const isAdmin = req.user.role === "admin";
+    const s = skip ? Number(skip) : 0;
+    const t = take ? Number(take) : 50;
     if (!isAdmin) {
-      const chat = await this.messageService.findByChatId(chatId);
-      // Additional tenant check could be added here if needed
+      const chat = await this.messageService.findByChatId(chatId, s, t);
       return chat;
     }
-    return this.messageService.findByChatId(chatId);
+    return this.messageService.findByChatId(chatId, s, t);
   }
 
   @Post("chats/:chatId/messages")

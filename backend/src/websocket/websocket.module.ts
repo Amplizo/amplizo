@@ -3,6 +3,7 @@ import { ChatGateway } from "./chat.gateway";
 import { ChatModule } from "../chat/chat.module";
 import { AuthModule } from "../auth/auth.module";
 import { CrmModule } from "../crm/crm.module";
+import { NotificationModule } from "../notification/notification.module";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
@@ -11,6 +12,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
     ChatModule,
     AuthModule,
     CrmModule,
+    NotificationModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

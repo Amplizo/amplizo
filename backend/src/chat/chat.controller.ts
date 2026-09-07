@@ -20,10 +20,10 @@ export class ChatController {
   @Get("chats")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
-  async findAll(@Req() req: RequestWithUser, @Query("status") status?: string) {
+  async findAll(@Req() req: RequestWithUser, @Query("status") status?: string, @Query("skip") skip?: string, @Query("take") take?: string) {
     const isAdmin = req.user.role === "admin";
     const agentId = isAdmin ? undefined : req.user.id;
-    return this.chatService.findAll(status, agentId);
+    return this.chatService.findAll(status, agentId, skip ? Number(skip) : 0, take ? Number(take) : 50);
   }
 
   @Get("chats/:id")
@@ -33,6 +33,9 @@ export class ChatController {
     const chat = await this.chatService.findOne(id);
     const isAdmin = req.user.role === "admin";
     if (!isAdmin && chat.agentId && chat.agentId !== req.user.id) {
+      throw new ForbiddenException("You do not have access to this chat");
+    }
+    if (!isAdmin && !chat.agentId) {
       throw new ForbiddenException("You do not have access to this chat");
     }
     return chat;

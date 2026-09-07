@@ -25,8 +25,10 @@ export class FollowUpService {
     isAdmin: boolean;
     clientId?: string;
     employeeId?: string;
+    skip?: number;
+    take?: number;
   }) {
-    const { status, today, overdue, upcoming, actorId, isAdmin, clientId, employeeId } = params;
+    const { status, today, overdue, upcoming, actorId, isAdmin, clientId, employeeId, skip = 0, take = 50 } = params;
 
     const where: any = {};
     if (status) where.status = status;
@@ -53,17 +55,24 @@ export class FollowUpService {
       where.status = "PENDING";
     }
 
-    return this.prisma.followUp.findMany({
-      where,
-      orderBy: { scheduledDate: "asc" },
-      include: {
-        client: { select: { id: true, name: true, phone: true, email: true, city: true, currentLeadStatus: true } },
-        assignedEmployee: { select: { id: true, name: true, email: true } },
-        completedBy: { select: { id: true, name: true } },
-        sentBy: { select: { id: true, name: true } },
-        cycle: { select: { id: true, status: true, purchaseId: true } },
-      },
-    });
+    const [items, total] = await Promise.all([
+      this.prisma.followUp.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { scheduledDate: "asc" },
+        include: {
+          client: { select: { id: true, name: true, phone: true, email: true, city: true, currentLeadStatus: true } },
+          assignedEmployee: { select: { id: true, name: true, email: true } },
+          completedBy: { select: { id: true, name: true } },
+          sentBy: { select: { id: true, name: true } },
+          cycle: { select: { id: true, status: true, purchaseId: true } },
+        },
+      }),
+      this.prisma.followUp.count({ where }),
+    ]);
+
+    return { items, total, skip, take };
   }
 
   async findOne(id: string, actorId: string, isAdmin: boolean) {

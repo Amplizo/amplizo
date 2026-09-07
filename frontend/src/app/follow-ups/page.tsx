@@ -51,11 +51,14 @@ function FollowUpsPageInner() {
   const [filter, setFilter] = useState<FilterType>("today");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [sendChannel, setSendChannel] = useState<Record<string, "whatsapp" | "sms" | "email">>({});
+  const [skipOffset, setSkipOffset] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const take = 50;
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
+      const params: any = { skip: skipOffset, take };
       if (filter === "today") params.today = true;
       else if (filter === "overdue") params.overdue = true;
       else if (filter === "upcoming") params.upcoming = true;
@@ -68,16 +71,26 @@ function FollowUpsPageInner() {
         api.getFollowUps(params),
         api.getFollowUpStats().catch(() => null),
       ]);
-      setItems(list || []);
+      setItems((list as any)?.items || []);
+      setTotalItems((list as any)?.total || 0);
       if (s) setStats(s);
     } catch (err) {
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, skipOffset, take]);
 
   useEffect(() => { load(); }, [load]);
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / take));
+  const currentPage = Math.floor(skipOffset / take) + 1;
+  const goToPage = (page: number) => {
+    const p = Math.max(1, Math.min(totalPages, page));
+    setSkipOffset((p - 1) * take);
+  };
+
+  useEffect(() => { setSkipOffset(0); }, [filter]);
 
   const complete = async (id: string) => {
     setBusyId(id);
@@ -279,6 +292,32 @@ function FollowUpsPageInner() {
                 </div>
               );
             })}
+            {totalItems > take && (
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <p className="text-xs text-gray-500">
+                  Showing {skipOffset + 1}–{Math.min(skipOffset + take, totalItems)} of {totalItems}
+                </p>
+                <div className="inline-flex items-center gap-1">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage <= 1 || loading}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages || loading}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-medium disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

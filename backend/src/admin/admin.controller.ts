@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Req } from "@nestjs/common";
 import { AdminService } from "./admin.service";
 import { JwtAuthGuard } from "../auth/jwt.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { PrismaService } from "../prisma/prisma.service";
+import { Request } from "express";
 
 @ApiTags("admin")
 @Controller()
@@ -31,7 +32,7 @@ export class AdminController {
   @Roles("admin")
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get all clients" })
-  async getClients(@Query("search") search?: string) {
+  async getClients(@Query("search") search?: string, @Query("skip") skip?: string, @Query("take") take?: string) {
     const where = search ? {
       OR: [
         { name: { contains: search } },
@@ -39,7 +40,13 @@ export class AdminController {
         { city: { contains: search } },
       ],
     } : {};
-    return this.prisma.client.findMany({ where, orderBy: { createdAt: "desc" } });
+    const s = skip ? Number(skip) : 0;
+    const t = take ? Number(take) : 50;
+    const [items, total] = await Promise.all([
+      this.prisma.client.findMany({ where, skip: s, take: t, orderBy: { createdAt: "desc" } }),
+      this.prisma.client.count({ where }),
+    ]);
+    return { items, total, skip: s, take: t };
   }
 
   @Get("admin/clients/:id")
@@ -94,13 +101,22 @@ export class AdminController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Search clients, chats and visitors (accessible to all authenticated users)" })
-  async publicSearch(@Query("q") query: string) {
+  async publicSearch(@Req() req: Request, @Query("q") query: string) {
     if (!query || query.length < 2) return { clients: [], chats: [], visitors: [] };
 
     const searchTerm = query.toLowerCase();
-    const clientWhere = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }, { city: { contains: searchTerm } }, { phone: { contains: searchTerm } }] };
-    const chatWhere = { OR: [{ subject: { contains: searchTerm } }, { tags: { contains: searchTerm } }] };
-    const visitorWhere = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }] };
+    const user = req.user as any;
+    const isAdmin = user?.role === "admin";
+    const actorId = user?.id;
+
+    const clientWhere: any = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }, { city: { contains: searchTerm } }, { phone: { contains: searchTerm } }] };
+    const chatWhere: any = { OR: [{ subject: { contains: searchTerm } }, { tags: { contains: searchTerm } }] };
+    const visitorWhere: any = { OR: [{ name: { contains: searchTerm } }, { email: { contains: searchTerm } }] };
+
+    if (!isAdmin) {
+      clientWhere.assignedEmployeeId = actorId;
+      chatWhere.agentId = actorId;
+    }
 
     const [clients, chats, visitors] = await Promise.all([
       this.prisma.client.findMany({ where: clientWhere, take: 5, orderBy: { createdAt: "desc" } }),

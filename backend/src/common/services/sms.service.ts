@@ -7,11 +7,13 @@ export class SmsService {
   private readonly logger = new Logger("SmsService");
   private readonly isConfigured: boolean;
   private readonly phoneNumber: string;
+  private readonly mode: "development" | "production";
 
   constructor(private prisma: PrismaService) {
     const sid = process.env.TWILIO_ACCOUNT_SID;
     const token = process.env.TWILIO_AUTH_TOKEN;
     const from = process.env.TWILIO_PHONE_NUMBER;
+    this.mode = (process.env.SMS_MODE as "development" | "production") || "development";
     this.isConfigured = !!(sid && token && from && sid.startsWith("AC"));
     this.phoneNumber = from || "";
 
@@ -26,14 +28,27 @@ export class SmsService {
         this.client = null;
       }
     } else {
-      this.logger.warn(
-        "Twilio credentials not configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_PHONE_NUMBER). SMS will be MOCKED in development."
-      );
+      if (this.mode === "production") {
+        this.logger.error("Twilio credentials not configured in production mode. SMS sending is disabled.");
+      } else {
+        this.logger.warn(
+          "Twilio credentials not configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_PHONE_NUMBER). SMS will be MOCKED in development."
+        );
+      }
     }
   }
 
   isReady() {
     return this.isConfigured;
+  }
+
+  getMode() {
+    return this.mode;
+  }
+
+  private maskPhone(phone: string): string {
+    if (!phone || phone.length < 6) return "****";
+    return phone.slice(0, 3) + "****" + phone.slice(-2);
   }
 
   private normalizeIndianPhone(to: string): string {
@@ -55,7 +70,7 @@ export class SmsService {
 
   async sendSms(to: string, body: string, meta?: { clientId?: string; followUpId?: string; type?: string }) {
     if (!this.isValidIndianPhone(to)) {
-      this.logger.warn(`Invalid phone: ${to}`);
+      this.logger.warn(`Invalid phone: ${this.maskPhone(to)}`);
       await this.logSms({ to, body, status: "FAILED", error: "Invalid phone", ...meta });
       return { success: false, error: "Invalid phone number" };
     }
@@ -63,7 +78,14 @@ export class SmsService {
     const normalizedTo = this.normalizeIndianPhone(to);
 
     if (!this.isConfigured || !this.client) {
-      this.logger.log(`[SMS MOCK] To: ${normalizedTo}, Body: ${body}`);
+      if (this.mode === "production") {
+        const error = "SMS service not configured in production";
+        this.logger.error(`${error}: Twilio credentials missing`);
+        await this.logSms({ to: normalizedTo, body, status: "FAILED", error, ...meta });
+        return { success: false, error };
+      }
+
+      this.logger.log(`[SMS MOCK] To: ${this.maskPhone(normalizedTo)}, Body: ${body}`);
       await this.logSms({ to: normalizedTo, body, status: "MOCKED", sid: `MOCK-${Date.now()}`, ...meta });
       return { success: true, mock: true, sid: `MOCK-${Date.now()}`, to: normalizedTo };
     }
@@ -74,12 +96,12 @@ export class SmsService {
         from: this.phoneNumber,
         to: normalizedTo,
       });
-      this.logger.log(`SMS sent to ${normalizedTo}: ${message.sid} status=${message.status}`);
+      this.logger.log(`SMS sent to ${this.maskPhone(normalizedTo)}: ${message.sid} status=${message.status}`);
       await this.logSms({ to: normalizedTo, body, status: "SENT", sid: message.sid, ...meta });
       return { success: true, sid: message.sid, status: message.status, to: normalizedTo };
     } catch (error: any) {
       const errMsg = error?.message || String(error);
-      this.logger.error(`Failed to send SMS to ${normalizedTo}: ${errMsg}`);
+      this.logger.error(`Failed to send SMS to ${this.maskPhone(normalizedTo)}: ${errMsg}`);
       await this.logSms({ to: normalizedTo, body, status: "FAILED", error: errMsg, ...meta });
       return { success: false, error: errMsg, to: normalizedTo };
     }

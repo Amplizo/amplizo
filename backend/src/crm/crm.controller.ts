@@ -10,6 +10,7 @@ import { EmailService } from "../common/services/email.service";
 import { ActivityLogService } from "./activity-log.service";
 import { RolesGuard } from "../common/guards/roles.guard";
 import { Roles } from "../common/decorators/roles.decorator";
+import { DetectIntentDto, AiRespondDto } from "../auth/dto/password.dto";
 
 interface RequestWithUser extends Request {
   user: { id: string; role: string };
@@ -159,8 +160,8 @@ export class CrmController {
 
   // ===== PURCHASES =====
   @Get("customers/:id/purchases")
-  async getPurchases(@Param("id") id: string) {
-    return this.purchaseService.findByClient(id);
+  async getPurchases(@Param("id") id: string, @Query("skip") skip?: string, @Query("take") take?: string) {
+    return this.purchaseService.findByClient(id, skip ? Number(skip) : 0, take ? Number(take) : 50);
   }
 
   @Post("customers/:id/purchases")
@@ -184,6 +185,8 @@ export class CrmController {
       overdue: query.overdue === "true",
       clientId: query.clientId,
       employeeId: query.employeeId,
+      skip: query.skip ? Number(query.skip) : 0,
+      take: query.take ? Number(query.take) : 50,
     });
   }
 
@@ -231,6 +234,34 @@ export class CrmController {
   async sendFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { channel?: "whatsapp" | "sms" | "email" }) {
     const result = await this.followUpService.sendFollowUp(id, req.user.id, req.user.role === "admin", body?.channel);
     return result;
+  }
+
+  @Post("ai/followup/:id/send")
+  @Roles("agent", "admin")
+  async sendAIFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { channel?: "whatsapp" | "sms" | "email" }) {
+    const { AIFollowUpService } = await import("./ai-followup.service");
+    const aiFollowUpService = new AIFollowUpService(
+      (this as any).prisma,
+      (this as any).smsService,
+      (this as any).emailService,
+      (this as any).whatsAppService,
+      (this as any).activityLog,
+    );
+    return aiFollowUpService.sendAIFollowUp(id, req.user.id, req.user.role === "admin", body?.channel);
+  }
+
+  @Post("ai/classify-lead/:clientId")
+  @Roles("agent", "admin")
+  async classifyLead(@Req() req: RequestWithUser, @Param("clientId") clientId: string) {
+    const { AIFollowUpService } = await import("./ai-followup.service");
+    const aiFollowUpService = new AIFollowUpService(
+      (this as any).prisma,
+      (this as any).smsService,
+      (this as any).emailService,
+      (this as any).whatsAppService,
+      (this as any).activityLog,
+    );
+    return aiFollowUpService.updateLeadStatus(clientId);
   }
 
   // ===== ASSIGNMENTS =====
@@ -332,13 +363,13 @@ export class CrmController {
 
   // ===== AI (text chat only - no voice/phone calls) =====
   @Post("ai/detect-intent")
-  async detectIntent(@Body() body: { message: string }) {
-    return this.aiService.detectBuyingIntent(body?.message || "");
+  async detectIntent(@Body() detectIntentDto: DetectIntentDto) {
+    return this.aiService.detectBuyingIntent(detectIntentDto.message || "");
   }
 
   @Post("ai/respond")
-  async aiRespond(@Body() body: { message: string; context?: any }) {
-    const reply = await this.aiService.generateResponse(body?.message || "", body?.context);
+  async aiRespond(@Body() aiRespondDto: AiRespondDto) {
+    const reply = await this.aiService.generateResponse(aiRespondDto.message || "", aiRespondDto.context);
     return { reply };
   }
 }
