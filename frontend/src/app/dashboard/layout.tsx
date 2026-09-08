@@ -1,10 +1,9 @@
-import { Metadata } from "next";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Manage your live chat conversations, view analytics, and monitor agent performance in the Amplizo dashboard.",
-};
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+export default function DashboardLayoutWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <DashboardLayout title="Dashboard" subtitle="Your business at a glance">
+      {children}
+    </DashboardLayout>
+  );
 }

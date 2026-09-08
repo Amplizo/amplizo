@@ -6,6 +6,7 @@ import { FollowUpService } from "./follow-up.service";
 import { AssignmentService } from "./assignment.service";
 import { AiService } from "./ai.service";
 import { ScheduledCallService } from "./scheduled-call.service";
+import { AIFollowUpService } from "./ai-followup.service";
 import { EmailService } from "../common/services/email.service";
 import { ActivityLogService } from "./activity-log.service";
 import { RolesGuard } from "../common/guards/roles.guard";
@@ -27,6 +28,7 @@ export class CrmController {
     private assignmentService: AssignmentService,
     private aiService: AiService,
     private scheduledCallService: ScheduledCallService,
+    private aiFollowUpService: AIFollowUpService,
     private emailService: EmailService,
     private activityLog: ActivityLogService,
   ) {}
@@ -239,29 +241,13 @@ export class CrmController {
   @Post("ai/followup/:id/send")
   @Roles("agent", "admin")
   async sendAIFollowUp(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { channel?: "whatsapp" | "sms" | "email" }) {
-    const { AIFollowUpService } = await import("./ai-followup.service");
-    const aiFollowUpService = new AIFollowUpService(
-      (this as any).prisma,
-      (this as any).smsService,
-      (this as any).emailService,
-      (this as any).whatsAppService,
-      (this as any).activityLog,
-    );
-    return aiFollowUpService.sendAIFollowUp(id, req.user.id, req.user.role === "admin", body?.channel);
+    return this.aiFollowUpService.sendAIFollowUp(id, req.user.id, req.user.role === "admin", body?.channel);
   }
 
   @Post("ai/classify-lead/:clientId")
   @Roles("agent", "admin")
   async classifyLead(@Req() req: RequestWithUser, @Param("clientId") clientId: string) {
-    const { AIFollowUpService } = await import("./ai-followup.service");
-    const aiFollowUpService = new AIFollowUpService(
-      (this as any).prisma,
-      (this as any).smsService,
-      (this as any).emailService,
-      (this as any).whatsAppService,
-      (this as any).activityLog,
-    );
-    return aiFollowUpService.updateLeadStatus(clientId);
+    return this.aiFollowUpService.updateLeadStatus(clientId);
   }
 
   // ===== ASSIGNMENTS =====

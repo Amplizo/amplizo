@@ -137,9 +137,11 @@ export class AIFollowUpService {
 
     let result: { success: boolean; error?: string; mock?: boolean };
 
+    const waActorId = followUp.assignedEmployeeId || actorId;
+
     switch (channel) {
       case "whatsapp":
-        result = await this.sendWhatsAppMessage(followUp.clientId, followUp.client.phone, message, actorId);
+        result = await this.sendWhatsAppMessage(followUp.clientId, followUp.client.phone, message, waActorId);
         break;
       case "sms":
         result = await this.sendSMSMessage(followUp.client.phone, message);
@@ -173,7 +175,8 @@ export class AIFollowUpService {
     if (!phone) return { success: false, error: "No phone number" };
 
     try {
-      const sent = await this.wa.sendAgentMessage(actorId, phone, message, true);
+      const conv = await this.wa.getOrCreateConversation(actorId, phone, { clientId });
+      const sent = await this.wa.sendAgentMessage(actorId, conv.id, message, true);
       return { success: sent.status === "SENT", error: sent.errorMessage || undefined, mock: !!sent.mock };
     } catch (e: any) {
       return { success: false, error: e.message };
