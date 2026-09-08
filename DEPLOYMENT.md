@@ -1,10 +1,17 @@
 # Amplizo Production Deployment Guide
 
 ## Prerequisites
-- Docker & Docker Compose installed
+- Docker & Docker Compose installed and running
 - PostgreSQL database (or use Docker)
 - Domain name configured (e.g., `amplizo.com`, `api.amplizo.com`)
 - SSL certificate (Let's Encrypt recommended)
+
+## Local Docker Setup
+On Windows, ensure Docker Desktop is running before executing:
+```powershell
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+docker compose up -d --build
+```
 
 ## Required Environment Variables
 
