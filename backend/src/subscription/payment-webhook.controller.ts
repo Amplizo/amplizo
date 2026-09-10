@@ -14,9 +14,22 @@ export class PaymentWebhookController {
 
   @Post("payments/webhook")
   async handleWebhook(@Body() payload: any, @Headers("x-razorpay-signature") razorpaySignature: string | undefined, @Ip() ip: string) {
+    const isProduction = process.env.NODE_ENV === "production";
     const webhookSecret = this.config.get<string>("RAZORPAY_WEBHOOK_SECRET") || process.env.RAZORPAY_WEBHOOK_SECRET;
 
-    if (webhookSecret && razorpaySignature) {
+    if (!webhookSecret) {
+      if (isProduction) {
+        this.logger.error("RAZORPAY_WEBHOOK_SECRET is not set. Rejecting webhook.", { ip });
+        throw new BadRequestException("Webhook secret not configured");
+      }
+      this.logger.warn("RAZORPAY_WEBHOOK_SECRET not set in non-production. Skipping signature verification.", { ip });
+    } else if (!razorpaySignature) {
+      if (isProduction) {
+        this.logger.error("Missing x-razorpay-signature header. Rejecting webhook.", { ip });
+        throw new BadRequestException("Missing signature header");
+      }
+      this.logger.warn("Missing x-razorpay-signature header in non-production.", { ip });
+    } else {
       const body = JSON.stringify(payload);
       const expected = createHmac("sha256", webhookSecret).update(body, "utf8").digest("hex");
       const a = Buffer.from(expected);

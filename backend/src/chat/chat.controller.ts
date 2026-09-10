@@ -15,7 +15,12 @@ export class ChatController {
   constructor(private chatService: ChatService) {}
 
   @Post("chats")
-  async create(@Body() createChatDto: CreateChatDto) { return this.chatService.create(createChatDto); }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("agent", "admin")
+  async create(@Req() req: RequestWithUser, @Body() createChatDto: CreateChatDto) {
+    const isAdmin = req.user.role === "admin";
+    return this.chatService.create(createChatDto, req.user.id, isAdmin);
+  }
 
   @Get("chats")
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -44,46 +49,56 @@ export class ChatController {
   @Post("chats/:id/assign")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
-  async assignAgent(@Param("id") id: string, @Body() assignAgentDto: AssignAgentDto) { return this.chatService.assignAgent(id, assignAgentDto.agentId); }
+  async assignAgent(@Req() req: RequestWithUser, @Param("id") id: string, @Body() assignAgentDto: AssignAgentDto) {
+    const isAdmin = req.user.role === "admin";
+    return this.chatService.assignAgent(id, assignAgentDto.agentId, req.user.id, isAdmin);
+  }
 
   @Post("chats/:id/close")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
-  async closeChat(@Param("id") id: string) { return this.chatService.closeChat(id); }
+  async closeChat(@Req() req: RequestWithUser, @Param("id") id: string) {
+    const isAdmin = req.user.role === "admin";
+    return this.chatService.closeChat(id, req.user.id, isAdmin);
+  }
 
   @Post("chats/:id/reopen")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
-  async reopenChat(@Param("id") id: string) { return this.chatService.reopenChat(id); }
+  async reopenChat(@Req() req: RequestWithUser, @Param("id") id: string) {
+    const isAdmin = req.user.role === "admin";
+    return this.chatService.reopenChat(id, req.user.id, isAdmin);
+  }
 
-  // AI handover - stop AI auto-reply, mark as waiting for human
   @Post("chats/:id/trigger-handover")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
-  async triggerHandover(@Param("id") id: string) {
-    return this.chatService.triggerAiHandover(id);
+  async triggerHandover(@Req() req: RequestWithUser, @Param("id") id: string) {
+    const isAdmin = req.user.role === "admin";
+    return this.chatService.triggerAiHandover(id, req.user.id, isAdmin);
   }
 
-  // Link chat to existing customer (by customer ID)
   @Post("chats/:id/link-customer")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
-  async linkCustomer(@Param("id") id: string, @Body() body: { clientId: string }) {
-    return this.chatService.linkToCustomer(id, body.clientId);
+  async linkCustomer(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { clientId: string }) {
+    const isAdmin = req.user.role === "admin";
+    return this.chatService.linkToCustomer(id, body.clientId, req.user.id, isAdmin);
   }
 
-  // Set conversation state (AI_ACTIVE / WAITING_FOR_HUMAN / HUMAN_ASSIGNED / HUMAN_ACTIVE / CLOSED)
   @Post("chats/:id/state")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
-  async setState(@Param("id") id: string, @Body() body: { state: string }) {
-    return this.chatService.setConversationState(id, body.state);
+  async setState(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: { state: string }) {
+    const isAdmin = req.user.role === "admin";
+    return this.chatService.setConversationState(id, body.state, req.user.id, isAdmin);
   }
 
   @Post("chats/:id/mark-read")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
-  async markRead(@Param("id") id: string) {
-    return this.chatService.markAsRead(id);
+  async markRead(@Req() req: RequestWithUser, @Param("id") id: string) {
+    const isAdmin = req.user.role === "admin";
+    return this.chatService.markAsRead(id, req.user.id, isAdmin);
   }
 }

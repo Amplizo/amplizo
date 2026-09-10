@@ -4,6 +4,12 @@ import { PrismaService } from "../prisma/prisma.service";
 import { JwtService } from "@nestjs/jwt";
 import { EmailService } from "../common/services/email.service";
 import { SmsService } from "../common/services/sms.service";
+import { createHmac } from "crypto";
+
+const OTP_PEPPER = process.env.OTP_PEPPER || process.env.JWT_SECRET || "amplizo-otp-pepper-dev-only";
+function hashOtp(otp: string): string {
+  return createHmac("sha256", OTP_PEPPER).update(otp).digest("hex");
+}
 
 describe("AuthService", () => {
   let service: AuthService;
@@ -74,7 +80,7 @@ describe("AuthService", () => {
 
   describe("verifyOtp", () => {
     it("should verify OTP and return tokens", async () => {
-      mockPrisma.oTP.findUnique.mockResolvedValue({ phone: "+919876543210", otpHash: "09fe05790eef875403ce366a6fb98d9f56f4b1ad934c2d79a72be5f1edc92d61", expiresAt: new Date(Date.now() + 300000), verified: false, attempts: 0, maxAttempts: 5 });
+      mockPrisma.oTP.findUnique.mockResolvedValue({ phone: "+919876543210", otpHash: hashOtp("123456"), expiresAt: new Date(Date.now() + 300000), verified: false, attempts: 0, maxAttempts: 5 });
       mockPrisma.oTP.update.mockResolvedValue({});
       mockPrisma.agent.findFirst.mockResolvedValue(null);
       mockPrisma.agent.create.mockResolvedValue({ id: "new-agent-id", name: "+919876543210", email: "+919876543210@phone.com", role: "agent", status: "online", createdAt: new Date() });

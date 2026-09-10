@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req, ForbiddenException } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/jwt.guard";
 import { RolesGuard } from "../common/guards/roles.guard";
@@ -46,7 +46,9 @@ export class NotificationController {
 
   @Post()
   @ApiOperation({ summary: "Create a notification" })
-  async createNotification(@Body() body: { type: string; title: string; message: string; link?: string; metadata?: string }) {
+  async createNotification(@Req() req: Request, @Body() body: { type: string; title: string; message: string; link?: string; metadata?: string }) {
+    const agentId = (req.user as any)?.id;
+    const isAdmin = (req.user as any)?.role === "admin";
     return this.prisma.notification.create({
       data: {
         type: body.type,
@@ -54,13 +56,20 @@ export class NotificationController {
         message: body.message,
         link: body.link,
         metadata: body.metadata,
+        agentId,
       },
     });
   }
 
   @Patch(":id/read")
   @ApiOperation({ summary: "Mark notification as read" })
-  async markAsRead(@Param("id") id: string) {
+  async markAsRead(@Req() req: Request, @Param("id") id: string) {
+    const agentId = (req.user as any)?.id;
+    const notification = await this.prisma.notification.findUnique({ where: { id } });
+    if (!notification) throw new ForbiddenException("Notification not found");
+    if (notification.agentId !== agentId) {
+      throw new ForbiddenException("You do not have access to this notification");
+    }
     return this.prisma.notification.update({
       where: { id },
       data: { read: true },
@@ -69,9 +78,10 @@ export class NotificationController {
 
   @Post("mark-all-read")
   @ApiOperation({ summary: "Mark all notifications as read" })
-  async markAllAsRead() {
+  async markAllAsRead(@Req() req: Request) {
+    const agentId = (req.user as any)?.id;
     await this.prisma.notification.updateMany({
-      where: { read: false },
+      where: { agentId, read: false },
       data: { read: true },
     });
     return { success: true };
@@ -79,14 +89,21 @@ export class NotificationController {
 
   @Delete(":id")
   @ApiOperation({ summary: "Delete a notification" })
-  async deleteNotification(@Param("id") id: string) {
+  async deleteNotification(@Req() req: Request, @Param("id") id: string) {
+    const agentId = (req.user as any)?.id;
+    const notification = await this.prisma.notification.findUnique({ where: { id } });
+    if (!notification) throw new ForbiddenException("Notification not found");
+    if (notification.agentId !== agentId) {
+      throw new ForbiddenException("You do not have access to this notification");
+    }
     return this.prisma.notification.delete({ where: { id } });
   }
 
   @Delete()
   @ApiOperation({ summary: "Delete all read notifications" })
-  async clearRead() {
-    await this.prisma.notification.deleteMany({ where: { read: true } });
+  async clearRead(@Req() req: Request) {
+    const agentId = (req.user as any)?.id;
+    await this.prisma.notification.deleteMany({ where: { agentId, read: true } });
     return { success: true };
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, Req, UseGuards, BadRequestException } from "@nestjs/common";
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, Req, UseGuards, BadRequestException, ForbiddenException } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt.guard";
 import { CustomerService } from "./customer.service";
 import { PurchaseService } from "./purchase.service";
@@ -139,7 +139,7 @@ export class CrmController {
           results.push({ ok: false, id, status: "forbidden", error: "You can only delete your assigned customers" });
           continue;
         }
-        await this.customerService.delete(id);
+        await this.customerService.delete(id, req.user.id, isAdmin);
         results.push({ ok: true, id, status: "deleted" });
       } catch (e: any) {
         const msg = e?.response?.message || e?.message || "Delete failed";
@@ -156,14 +156,15 @@ export class CrmController {
   }
 
   @Delete("customers/:id")
-  async deleteCustomer(@Param("id") id: string) {
-    return this.customerService.delete(id);
+  async deleteCustomer(@Req() req: RequestWithUser, @Param("id") id: string) {
+    const isAdmin = req.user.role === "admin";
+    return this.customerService.delete(id, req.user.id, isAdmin);
   }
 
   // ===== PURCHASES =====
   @Get("customers/:id/purchases")
-  async getPurchases(@Param("id") id: string, @Query("skip") skip?: string, @Query("take") take?: string) {
-    return this.purchaseService.findByClient(id, skip ? Number(skip) : 0, take ? Number(take) : 50);
+  async getPurchases(@Req() req: RequestWithUser, @Param("id") id: string, @Query("skip") skip?: string, @Query("take") take?: string) {
+    return this.purchaseService.findByClient(id, req.user.id, req.user.role === "admin", skip ? Number(skip) : 0, take ? Number(take) : 50);
   }
 
   @Post("customers/:id/purchases")
@@ -253,20 +254,34 @@ export class CrmController {
   // ===== ASSIGNMENTS =====
   @Post("customers/:id/assign")
   async assign(@Req() req: RequestWithUser, @Param("id") id: string, @Body() body: any) {
+    const isAdmin = req.user.role === "admin";
+    const existing = await this.customerService.findOneRaw(id);
+    if (!existing) throw new BadRequestException("Customer not found");
+    if (!isAdmin && existing.assignedEmployeeId !== req.user.id) {
+      throw new ForbiddenException("You can only assign your assigned customers");
+    }
     return this.assignmentService.assign(id, body.employeeId, req.user.id);
   }
 
   @Post("customers/:id/unassign")
   async unassign(@Req() req: RequestWithUser, @Param("id") id: string) {
+    const isAdmin = req.user.role === "admin";
+    const existing = await this.customerService.findOneRaw(id);
+    if (!existing) throw new BadRequestException("Customer not found");
+    if (!isAdmin && existing.assignedEmployeeId !== req.user.id) {
+      throw new ForbiddenException("You can only unassign your assigned customers");
+    }
     return this.assignmentService.unassign(id, req.user.id);
   }
 
   @Get("employees")
+  @Roles("admin")
   async listEmployees() {
     return this.assignmentService.getEmployees();
   }
 
   @Get("employees/:id/workload")
+  @Roles("admin")
   async employeeWorkload(@Param("id") id: string) {
     return this.assignmentService.getEmployeeWorkload(id);
   }
@@ -349,12 +364,16 @@ export class CrmController {
 
   // ===== AI (text chat only - no voice/phone calls) =====
   @Post("ai/detect-intent")
-  async detectIntent(@Body() detectIntentDto: DetectIntentDto) {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("agent", "admin")
+  async detectIntent(@Req() req: RequestWithUser, @Body() detectIntentDto: DetectIntentDto) {
     return this.aiService.detectBuyingIntent(detectIntentDto.message || "");
   }
 
   @Post("ai/respond")
-  async aiRespond(@Body() aiRespondDto: AiRespondDto) {
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("agent", "admin")
+  async aiRespond(@Req() req: RequestWithUser, @Body() aiRespondDto: AiRespondDto) {
     const reply = await this.aiService.generateResponse(aiRespondDto.message || "", aiRespondDto.context);
     return { reply };
   }

@@ -1,15 +1,25 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BackButton } from "@/components/ui/BackButton";
+import { useAuthStore } from "@/store";
 import { api } from "@/lib/api";
 import { BarChart3, Users, MessageCircle, TrendingUp, Clock, Star, ArrowUpRight, ArrowDownRight, Calendar } from "lucide-react";
 
 export default function AnalyticsPage() {
+  const router = useRouter();
+  const { agent } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [period, setPeriod] = useState<"7d" | "30d" | "90d">("30d");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (agent?.role && agent.role !== "admin") {
+      router.replace("/client-dashboard");
+    }
+  }, [agent, router]);
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -42,7 +52,7 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout title="Analytics" subtitle="Track performance and engagement metrics">
-      <BackButton className="mb-3" />
+        <BackButton className="mb-3" />
       {loading && <div className="text-sm text-gray-500 mb-4">Loading analytics...</div>}
       {error && <div className="text-sm text-red-600 mb-4">{error} <button onClick={fetchAnalytics} className="underline ml-2">Retry</button></div>}
       <div className="space-y-6">

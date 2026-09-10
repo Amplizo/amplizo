@@ -99,6 +99,12 @@ export default function SubscriptionPage() {
   const [paymentId, setPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (agent?.role && agent.role !== "agent") {
+      router.replace("/dashboard");
+    }
+  }, [agent, router]);
+
+  useEffect(() => {
     loadSubscription();
   }, []);
 

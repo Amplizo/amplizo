@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { ActivityLogService } from "./activity-log.service";
 
@@ -114,7 +114,12 @@ export class PurchaseService {
     return result;
   }
 
-  async findByClient(clientId: string, skip = 0, take = 50) {
+  async findByClient(clientId: string, actorId: string, isAdmin: boolean, skip = 0, take = 50) {
+    const client = await this.prisma.client.findUnique({ where: { id: clientId } });
+    if (!client) throw new NotFoundException("Customer not found");
+    if (!isAdmin && client.assignedEmployeeId !== actorId) {
+      throw new ForbiddenException("You do not have access to this customer");
+    }
     const [items, total] = await Promise.all([
       this.prisma.purchase.findMany({
         where: { clientId },

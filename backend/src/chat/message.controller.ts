@@ -17,12 +17,9 @@ export class MessageController {
   @UseGuards(JwtAuthGuard)
   async findByChatId(@Req() req: RequestWithUser, @Param("chatId") chatId: string, @Query("skip") skip?: string, @Query("take") take?: string) {
     const isAdmin = req.user.role === "admin";
+    const chat = await this.messageService.assertChatAccess(chatId, req.user.id, isAdmin);
     const s = skip ? Number(skip) : 0;
     const t = take ? Number(take) : 50;
-    if (!isAdmin) {
-      const chat = await this.messageService.findByChatId(chatId, s, t);
-      return chat;
-    }
     return this.messageService.findByChatId(chatId, s, t);
   }
 
@@ -30,6 +27,8 @@ export class MessageController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("agent", "admin")
   async create(@Req() req: RequestWithUser, @Param("chatId") chatId: string, @Body() createMessageDto: CreateMessageDto) {
+    const isAdmin = req.user.role === "admin";
+    await this.messageService.assertChatAccess(chatId, req.user.id, isAdmin);
     return this.messageService.create(chatId, { content: createMessageDto.content, replyTo: createMessageDto.replyTo }, req.user.id, "agent");
   }
 }

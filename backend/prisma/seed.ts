@@ -4,8 +4,8 @@ import * as argon2 from "argon2";
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminPassword = await argon2.hash("admin123");
-  const agentPassword = await argon2.hash("agent123");
+  const adminPassword = await argon2.hash(process.env.SEED_ADMIN_PASSWORD || "ChangeMeAdmin2024!");
+  const agentPassword = await argon2.hash(process.env.SEED_AGENT_PASSWORD || "ChangeMeAgent2024!");
 
   await prisma.agent.upsert({ where: { email: "admin@amplizo.com" }, update: {}, create: { name: "Admin User", email: "admin@amplizo.com", password: adminPassword, role: "admin", status: "offline" } });
   await prisma.agent.upsert({ where: { email: "client@amplizo.com" }, update: {}, create: { name: "Test Client", email: "client@amplizo.com", password: agentPassword, role: "agent", status: "offline" } });
@@ -56,10 +56,8 @@ async function main() {
   }
 
   console.log("Seed complete:");
-  console.log("  Admin Login: admin@amplizo.com / admin123");
-  console.log("  Client Login: client@amplizo.com / agent123");
-  console.log("  Agent Login: sarah@amplizo.com / agent123");
-  console.log("  Agent Login: mike@amplizo.com / agent123");
+  console.log("  Admin Login: admin@amplizo.com / " + (process.env.SEED_ADMIN_PASSWORD || "ChangeMeAdmin2024!"));
+  console.log("  Client Login: client@amplizo.com / " + (process.env.SEED_AGENT_PASSWORD || "ChangeMeAgent2024!"));
   console.log(`  ${sampleClients.length} sample clients added`);
   console.log(`  ${sampleNotifications.length} sample notifications added`);
 }

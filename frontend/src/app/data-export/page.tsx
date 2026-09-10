@@ -1,9 +1,11 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BackButton } from "@/components/ui/BackButton";
 import { FileDown, Download, Filter, CheckCircle2, AlertCircle, Loader2, Search } from "lucide-react";
 import api from "@/lib/api";
+import { useAuthStore } from "@/store";
 
 interface ExportCustomer {
   id: string;
@@ -23,6 +25,8 @@ interface ExportCustomer {
 }
 
 export default function DataExportPage() {
+  const router = useRouter();
+  const { agent } = useAuthStore();
   const [customers, setCustomers] = useState<ExportCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +36,12 @@ export default function DataExportPage() {
   const [exporting, setExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "xlsx">("csv");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (agent?.role && agent.role !== "agent") {
+      router.replace("/dashboard");
+    }
+  }, [agent, router]);
 
   useEffect(() => {
     fetchCustomers();

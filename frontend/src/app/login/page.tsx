@@ -22,7 +22,6 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [devOtp, setDevOtp] = useState("");
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
@@ -54,8 +53,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setOtpSent(true);
-        if (data.devOtp) setDevOtp(data.devOtp);
+         setOtpSent(true);
       } else { setError(data.message || "Failed to send OTP"); }
     } catch { setError("Failed to send OTP"); }
     finally { setIsLoading(false); }
@@ -173,7 +171,6 @@ export default function LoginPage() {
               {otpSent && (
                 <>
                   <Input label="Enter OTP" type="text" placeholder="6-digit OTP" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} required />
-                  {devOtp && <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-sm text-yellow-700 dark:text-yellow-400">Development OTP: <span className="font-mono font-bold">{devOtp}</span></div>}
                   <Button onClick={handleVerifyOtp} className="w-full" size="lg" isLoading={isLoading}><Zap className="w-4 h-4 mr-2" />Verify OTP</Button>
                   <button onClick={handleSendOtp} className="w-full text-sm text-brand-600 hover:text-brand-700 font-medium">Resend OTP</button>
                 </>

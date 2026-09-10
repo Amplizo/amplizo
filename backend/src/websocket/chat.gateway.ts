@@ -2,23 +2,21 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, Conne
 import { Server, Socket } from "socket.io";
 import { Logger } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { ChatService } from "../chat/chat.service";
-import { MessageService } from "../chat/message.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { MessageService } from "../chat/message.service";
 import { AiService } from "../crm/ai.service";
 import { ActivityLogService } from "../crm/activity-log.service";
 import { NotificationService } from "../notification/notification.service";
 
-@WebSocketGateway({ cors: { origin: ["http://localhost:3000", "http://localhost:3001"], methods: ["GET", "POST"] } })
+@WebSocketGateway({ cors: { origin: (process.env.ALLOWED_WS_ORIGINS || "http://localhost:3000,http://localhost:3001").split(","), methods: ["GET", "POST"] } })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private logger = new Logger("ChatGateway");
 
   constructor(
     private jwtService: JwtService,
-    private chatService: ChatService,
-    private messageService: MessageService,
     private prisma: PrismaService,
+    private messageService: MessageService,
     private aiService: AiService,
     private activityLog: ActivityLogService,
     private notificationService: NotificationService,
@@ -28,30 +26,46 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const token = client.handshake.auth.token;
       if (!token) {
-        // Allow visitor connections (no token = visitor)
         client.data.visitor = true;
         return;
       }
       const payload = this.jwtService.verify(token);
-      client.data.user = payload;
-      await this.prisma.agent.update({ where: { id: payload.sub }, data: { status: "online" } });
-      this.server.emit("presence", { userId: payload.sub, status: "online" });
-      this.logger.log(`Agent connected: ${payload.sub}`);
+      const agent = await this.prisma.agent.findUnique({ where: { id: payload.sub }, select: { id: true, role: true, status: true, isActive: true } });
+      if (!agent || agent.status === "offline" || agent.isActive === false) {
+        client.data.visitor = true;
+        return;
+      }
+      client.data.user = { sub: agent.id, role: agent.role };
+      await this.prisma.agent.update({ where: { id: agent.id }, data: { status: "online" } });
+      this.server.emit("presence", { userId: agent.id, status: "online" });
+      this.logger.log(`Agent connected: ${agent.id}`);
     } catch (error) {
-      // Visitor connections are fine
       client.data.visitor = true;
     }
   }
 
   async handleDisconnect(client: Socket) {
-    if (client.data.user) {
+    if (client.data.user?.sub) {
       await this.prisma.agent.update({ where: { id: client.data.user.sub }, data: { status: "offline" } });
       this.server.emit("presence", { userId: client.data.user.sub, status: "offline" });
     }
   }
 
   @SubscribeMessage("chat:join")
-  handleJoinChat(@ConnectedSocket() client: Socket, @MessageBody() data: { chatId: string }) {
+  async handleJoinChat(@ConnectedSocket() client: Socket, @MessageBody() data: { chatId: string }) {
+    const user = client.data.user;
+    if (user) {
+      const chat = await this.prisma.chat.findUnique({ where: { id: data.chatId }, select: { id: true, agentId: true } });
+      if (!chat) {
+        client.emit("error", { message: "Chat not found" });
+        return;
+      }
+      const isAdmin = user.role === "admin";
+      if (!isAdmin && chat.agentId !== user.sub) {
+        client.emit("error", { message: "You do not have access to this chat" });
+        return;
+      }
+    }
     client.join(`chat:${data.chatId}`);
   }
 
@@ -64,21 +78,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleSendMessage(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
     try {
       const user = client.data.user;
-      // Agent message
       if (user) {
+        const chat = await this.prisma.chat.findUnique({ where: { id: data.chatId }, select: { id: true, agentId: true } });
+        if (!chat) {
+          client.emit("error", { message: "Chat not found" });
+          return;
+        }
+        const isAdmin = user.role === "admin";
+        if (!isAdmin && chat.agentId !== user.sub) {
+          client.emit("error", { message: "You do not have access to this chat" });
+          return;
+        }
         const message = await this.messageService.create(data.chatId, { content: data.content, attachments: data.attachments, replyTo: data.replyTo }, user.sub, "agent");
         await this.prisma.chat.update({ where: { id: data.chatId }, data: { updatedAt: new Date() } });
         this.server.to(`chat:${data.chatId}`).emit("message:new", message);
         return;
       }
-      // Visitor message - detect AI intent and respond
       const chat = await this.prisma.chat.findUnique({ where: { id: data.chatId }, include: { client: true } });
       if (!chat) return;
       const visitorMessage = await this.messageService.create(data.chatId, { content: data.content }, data.visitorId || "visitor", "visitor");
       this.server.to(`chat:${data.chatId}`).emit("message:new", visitorMessage);
       await this.prisma.chat.update({ where: { id: data.chatId }, data: { unreadCount: { increment: 1 }, updatedAt: new Date() } });
 
-      // Only auto-respond if AI is active
       if (chat.conversationState !== "AI_ACTIVE") return;
 
       const intent = this.aiService.detectBuyingIntent(data.content);
@@ -110,7 +131,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      // Generate AI reply
       const aiReply = await this.aiService.generateResponse(data.content);
       const aiMessage = await this.messageService.create(data.chatId, { content: aiReply }, "ai_assistant", "ai");
       this.server.to(`chat:${data.chatId}`).emit("message:new", aiMessage);

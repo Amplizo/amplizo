@@ -1,16 +1,30 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BackButton } from "@/components/ui/BackButton";
 import { FileUp, Upload, Download, CheckCircle2, AlertCircle, X, FileSpreadsheet, Loader2 } from "lucide-react";
 import api from "@/lib/api";
+import { useAuthStore } from "@/store";
 
 export default function DataImportPage() {
+  const router = useRouter();
+  const { agent } = useAuthStore();
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ success: number; failed: number; skipped: number; message: string } | null>(null);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (agent?.role && agent.role !== "agent") {
+      router.replace("/dashboard");
+    }
+  }, [agent, router]);
+
+  if (agent?.role && agent.role !== "agent") {
+    return null;
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];

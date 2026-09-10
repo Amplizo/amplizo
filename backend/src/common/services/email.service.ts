@@ -15,6 +15,8 @@ export class EmailService {
         secure: process.env.SMTP_SECURE === "true",
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       });
+    } else if (process.env.NODE_ENV === "production") {
+      this.logger.warn("SMTP not configured (SMTP_HOST/SMTP_USER missing). Password reset and transactional emails will not be sent in production.");
     }
   }
 

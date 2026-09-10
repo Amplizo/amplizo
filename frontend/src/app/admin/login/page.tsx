@@ -136,13 +136,6 @@ export default function AdminLoginPage() {
               Not an admin? <Link href="/login" className="text-brand-600 font-medium hover:text-brand-700">Login as Client</Link>
             </p>
           </div>
-
-          <div className="mt-6 p-4 rounded-xl bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800">
-            <p className="text-xs text-brand-700 dark:text-brand-300 text-center">
-              <strong>Demo Credentials:</strong><br />
-              Email: admin@amplizo.com | Password: admin123
-            </p>
-          </div>
         </div>
       </div>
     </div>

@@ -1,10 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Users, UserPlus, IndianRupee, Clock, TrendingUp, CheckCircle2,
   Flame, Snowflake, XCircle, ArrowRight, Calendar, Phone, Loader2, MessageCircle,
 } from "lucide-react";
+import { useAuthStore } from "@/store";
 import api from "@/lib/api";
 import { LeadStatusBadge, FollowUpStatusBadge } from "@/components/crm/lead-status";
 
@@ -37,12 +39,20 @@ interface TodayFollowUp {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { agent } = useAuthStore();
   const [customerStats, setCustomerStats] = useState<CustomerStats>({ total: 0, todayNew: 0, hot: 0, cold: 0, notInterested: 0, pendingFollowUps: 0 });
   const [salesStats, setSalesStats] = useState<SalesStats>({ totalSales: 0, todaySales: 0, todayPurchaseCount: 0, totalPurchaseCount: 0 });
   const [followUpStats, setFollowUpStats] = useState<FollowUpStats>({ pending: 0, completed: 0, todayDue: 0, overdue: 0 });
   const [todayFollowUps, setTodayFollowUps] = useState<TodayFollowUp[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (agent?.role && agent.role !== "admin") {
+      router.replace("/client-dashboard");
+    }
+  }, [agent, router]);
 
   const load = async () => {
     setLoading(true);
@@ -174,7 +184,7 @@ export default function DashboardPage() {
         <QuickLink href="/chats" label="Live Chats" icon={<MessageCircle className="h-4 w-4" />} />
         <QuickLink href="/employees" label="Employees" icon={<UserPlus className="h-4 w-4" />} />
       </div>
-    </div>
+      </div>
   );
 }
 

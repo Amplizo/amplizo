@@ -6,13 +6,30 @@ import { CreateChatDto } from "./dto/create-chat.dto";
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createChatDto: CreateChatDto) {
+  async assertChatAccess(chatId: string, actorId: string, isAdmin: boolean) {
+    const chat = await this.prisma.chat.findUnique({ where: { id: chatId }, select: { id: true, agentId: true } });
+    if (!chat) throw new NotFoundException("Chat not found");
+    if (!isAdmin && chat.agentId !== actorId) {
+      throw new ForbiddenException("You do not have access to this chat");
+    }
+    return chat;
+  }
+
+  async create(createChatDto: CreateChatDto, actorId: string, isAdmin: boolean) {
+    const client = createChatDto.clientId ? await this.prisma.client.findUnique({ where: { id: createChatDto.clientId } }) : null;
+    if (createChatDto.clientId && !client) {
+      throw new ForbiddenException("Customer not found");
+    }
+    if (createChatDto.clientId && client && !isAdmin && client.assignedEmployeeId !== actorId) {
+      throw new ForbiddenException("You can only create chats for your assigned customers");
+    }
+    const agentId = isAdmin ? createChatDto.agentId : actorId;
     return this.prisma.chat.create({
       data: {
         visitorId: createChatDto.visitorId,
         subject: createChatDto.subject,
         clientId: createChatDto.clientId,
-        agentId: createChatDto.agentId,
+        agentId,
         status: "waiting",
         unreadCount: 0,
         tags: "",
@@ -68,10 +85,11 @@ export class ChatService {
     return chat;
   }
 
-  async assignAgent(chatId: string, agentId: string) {
+  async assignAgent(chatId: string, agentId: string, actorId: string, isAdmin: boolean) {
+    await this.assertChatAccess(chatId, actorId, isAdmin);
     return this.prisma.chat.update({
       where: { id: chatId },
-      data: { agentId, status: "active", conversationState: "HUMAN_ACTIVE" },
+      data: { agentId, status: "active", conversationState: "HUMAN_ASSIGNED" },
       include: {
         visitor: true,
         client: true,
@@ -80,14 +98,16 @@ export class ChatService {
     });
   }
 
-  async closeChat(chatId: string) {
+  async closeChat(chatId: string, actorId: string, isAdmin: boolean) {
+    await this.assertChatAccess(chatId, actorId, isAdmin);
     return this.prisma.chat.update({
       where: { id: chatId },
       data: { status: "closed", conversationState: "CLOSED", closedAt: new Date() },
     });
   }
 
-  async reopenChat(chatId: string) {
+  async reopenChat(chatId: string, actorId: string, isAdmin: boolean) {
+    await this.assertChatAccess(chatId, actorId, isAdmin);
     return this.prisma.chat.update({
       where: { id: chatId },
       data: { status: "active", conversationState: "HUMAN_ACTIVE", closedAt: null },
@@ -99,21 +119,29 @@ export class ChatService {
     });
   }
 
-  async triggerAiHandover(chatId: string) {
+  async triggerAiHandover(chatId: string, actorId: string, isAdmin: boolean) {
+    await this.assertChatAccess(chatId, actorId, isAdmin);
     return this.prisma.chat.update({
       where: { id: chatId },
       data: { conversationState: "WAITING_FOR_HUMAN" },
     });
   }
 
-  async setConversationState(chatId: string, state: string) {
+  async setConversationState(chatId: string, state: string, actorId: string, isAdmin: boolean) {
+    await this.assertChatAccess(chatId, actorId, isAdmin);
     return this.prisma.chat.update({
       where: { id: chatId },
       data: { conversationState: state },
     });
   }
 
-  async linkToCustomer(chatId: string, clientId: string) {
+  async linkToCustomer(chatId: string, clientId: string, actorId: string, isAdmin: boolean) {
+    await this.assertChatAccess(chatId, actorId, isAdmin);
+    const client = await this.prisma.client.findUnique({ where: { id: clientId } });
+    if (!client) throw new NotFoundException("Customer not found");
+    if (!isAdmin && client.assignedEmployeeId !== actorId) {
+      throw new ForbiddenException("You can only link chats to your assigned customers");
+    }
     return this.prisma.chat.update({
       where: { id: chatId },
       data: { clientId },
@@ -121,7 +149,8 @@ export class ChatService {
     });
   }
 
-  async markAsRead(chatId: string) {
+  async markAsRead(chatId: string, actorId: string, isAdmin: boolean) {
+    await this.assertChatAccess(chatId, actorId, isAdmin);
     return this.prisma.chat.update({
       where: { id: chatId },
       data: { unreadCount: 0 },

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { ActivityLogService } from "./activity-log.service";
 import { PurchaseService } from "./purchase.service";
@@ -262,7 +262,12 @@ export class CustomerService {
     return updated;
   }
 
-  async delete(id: string) {
+  async delete(id: string, actorId: string, isAdmin: boolean) {
+    const existing = await this.prisma.client.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Customer not found");
+    if (!isAdmin && existing.assignedEmployeeId !== actorId) {
+      throw new ForbiddenException("You can only delete your assigned customers");
+    }
     await this.prisma.client.delete({ where: { id } });
     return { success: true };
   }

@@ -10,6 +10,7 @@ import { AddCustomerModal } from "@/components/crm/AddCustomerModal";
 import { ScheduleCallModal } from "@/components/crm/ScheduleCallModal";
 import { SendWhatsAppModal } from "@/components/crm/SendWhatsAppModal";
 import { SendEmailModal } from "@/components/crm/SendEmailModal";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 
 interface Customer {
   id: string;
@@ -99,6 +100,12 @@ export default function ClientDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [successMessage, setSuccessMessage] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
+
+  useEffect(() => {
+    if (agent?.role && agent.role !== "agent") {
+      router.replace("/dashboard");
+    }
+  }, [agent, router]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);

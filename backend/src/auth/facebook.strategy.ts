@@ -8,8 +8,8 @@ import { AuthService } from "./auth.service";
 export class FacebookStrategy extends PassportStrategy(Strategy, "facebook") {
   constructor(private config: ConfigService, private authService: AuthService) {
     super({
-      clientID: config.get<string>("FACEBOOK_APP_ID") || "facebook-app-id",
-      clientSecret: config.get<string>("FACEBOOK_APP_SECRET") || "facebook-app-secret",
+      clientID: config.get<string>("FACEBOOK_APP_ID"),
+      clientSecret: config.get<string>("FACEBOOK_APP_SECRET"),
       callbackURL: config.get<string>("FACEBOOK_CALLBACK_URL") || "http://localhost:4000/api/auth/facebook/callback",
       scope: ["email"],
       profileFields: ["id", "emails", "name", "photos"],

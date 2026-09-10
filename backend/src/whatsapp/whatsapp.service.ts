@@ -83,7 +83,15 @@ export class WhatsAppService {
    * We must echo the challenge if verify_token matches.
    */
   verifyWebhook(mode: string, token: string, challenge: string): { ok: boolean; challenge?: string } {
-    if (mode === "subscribe" && token && token === this.verifyToken) {
+    if (!this.verifyToken) {
+      if (process.env.NODE_ENV === "production") {
+        this.logger.error("WHATSAPP_VERIFY_TOKEN not set. Rejecting webhook verification.");
+        return { ok: false };
+      }
+      this.logger.warn("WHATSAPP_VERIFY_TOKEN not set");
+      return { ok: false };
+    }
+    if (mode === "subscribe" && token === this.verifyToken) {
       return { ok: true, challenge };
     }
     return { ok: false };
@@ -96,6 +104,10 @@ export class WhatsAppService {
    */
   verifySignature(rawBody: string, signatureHeader: string | undefined): boolean {
     if (!this.appSecret) {
+      if (process.env.NODE_ENV === "production") {
+        this.logger.error("WHATSAPP_APP_SECRET not set. Rejecting webhook signature (INSECURE in production).");
+        return false;
+      }
       this.logger.warn("WHATSAPP_APP_SECRET not set - skipping signature verification (INSECURE in production)");
       return true;
     }

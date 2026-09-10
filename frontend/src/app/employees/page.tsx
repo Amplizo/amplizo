@@ -1,9 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Users, Search, Mail, Phone, CheckCircle2, XCircle, Briefcase, Loader2, RefreshCw } from "lucide-react";
 import api from "@/lib/api";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BackButton } from "@/components/ui/BackButton";
+import { useAuthStore } from "@/store";
 
 interface Employee {
   id: string;
@@ -145,6 +147,19 @@ function EmployeesContent() {
 }
 
 export default function EmployeesPage() {
+  const router = useRouter();
+  const { agent } = useAuthStore();
+
+  useEffect(() => {
+    if (agent?.role && agent.role !== "admin") {
+      router.replace("/client-dashboard");
+    }
+  }, [agent, router]);
+
+  if (agent?.role && agent.role !== "admin") {
+    return null;
+  }
+
   return (
     <DashboardLayout title="Employees" subtitle="Manage your team">
       <BackButton className="mb-3" fallback="/dashboard" />

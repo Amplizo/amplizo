@@ -4,12 +4,12 @@ services:
     ports:
       - "4000:4000"
     env_file:
-      - ./backend/.env
+      - ./backend/.env.production
     environment:
       - NODE_ENV=production
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - ./uploads:/app/uploads
     restart: unless-stopped
@@ -19,14 +19,28 @@ services:
       timeout: 10s
       retries: 3
 
+  migrate:
+    build: ./backend
+    command: sh -c "npx prisma generate && npx prisma migrate deploy"
+    env_file:
+      - ./backend/.env.production
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
+    env_file:
+      - ./frontend/.env.production
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
-      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-http://localhost:4000}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_API_URL
+      - NEXT_PUBLIC_WS_URL
+      - NEXT_PUBLIC_APP_URL
     depends_on:
       - backend
     restart: unless-stopped

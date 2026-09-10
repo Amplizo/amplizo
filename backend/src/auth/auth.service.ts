@@ -10,7 +10,10 @@ import { SignupDto } from "./dto/signup.dto";
 import { Request } from "express";
 import { createHmac, randomInt } from "crypto";
 
-const OTP_PEPPER = process.env.OTP_PEPPER || process.env.JWT_SECRET || "amplizo-otp-pepper-change-in-production";
+const OTP_PEPPER = process.env.OTP_PEPPER || process.env.JWT_SECRET || "amplizo-otp-pepper-dev-only";
+if (process.env.NODE_ENV === "production" && !process.env.OTP_PEPPER && !process.env.JWT_SECRET) {
+  throw new Error("OTP_PEPPER or JWT_SECRET is required in production");
+}
 const OTP_EXPIRY_MINUTES = 5;
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour

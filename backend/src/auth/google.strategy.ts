@@ -8,8 +8,8 @@ import { AuthService } from "./auth.service";
 export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
   constructor(private config: ConfigService, private authService: AuthService) {
     super({
-      clientID: config.get<string>("GOOGLE_CLIENT_ID") || "google-client-id",
-      clientSecret: config.get<string>("GOOGLE_CLIENT_SECRET") || "google-client-secret",
+      clientID: config.get<string>("GOOGLE_CLIENT_ID"),
+      clientSecret: config.get<string>("GOOGLE_CLIENT_SECRET"),
       callbackURL: config.get<string>("GOOGLE_CALLBACK_URL") || "http://localhost:4000/api/auth/google/callback",
       scope: ["email", "profile"],
     });
