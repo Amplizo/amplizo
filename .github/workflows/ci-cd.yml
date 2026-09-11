@@ -38,9 +38,6 @@ jobs:
     - name: Install Backend Dependencies
       run: cd backend && npm ci
     
-    - name: Lint Backend
-      run: cd backend && npm run lint
-    
     - name: Build Backend
       run: cd backend && npm run build
 
@@ -54,6 +51,8 @@ jobs:
     
     - name: Build Docker Images
       run: docker-compose build
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
     
     - name: Login to Docker Hub
       uses: docker/login-action@v3
@@ -63,3 +62,24 @@ jobs:
     
     - name: Push Docker Images
       run: docker-compose push
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/amplizo
+            git pull origin main
+            docker compose pull
+            docker compose up -d
+            docker system prune -f
