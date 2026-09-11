@@ -4,19 +4,39 @@ import { ValidationPipe, Logger } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { join } from "path";
 import helmet from "helmet";
+import { json, urlencoded } from "express";
 import { AppModule } from "./app.module";
 import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
 import { WinstonLogger } from "./common/services/winston.logger";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(), { bufferLogs: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(), {
+    bufferLogs: false,
+    bodyParser: false,
+  });
 
   const logger = app.get(WinstonLogger);
   app.useLogger(logger);
 
+  app.use(
+    json({
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+  app.use(
+    urlencoded({
+      extended: true,
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+
   if (process.env.NODE_ENV === "production") {
-    const required = ["JWT_SECRET", "DATABASE_URL", "META_WEBHOOK_VERIFY_TOKEN"];
+    const required = ["JWT_SECRET", "DATABASE_URL", "WHATSAPP_VERIFY_TOKEN"];
     const missing = required.filter((key) => !process.env[key]);
     if (missing.length > 0) {
       logger.error(`Missing required environment variables: ${missing.join(", ")}`);

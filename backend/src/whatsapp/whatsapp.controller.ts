@@ -46,11 +46,17 @@ export class WhatsAppController {
   @HttpCode(HttpStatus.OK)
   async incomingWebhook(
     @Body() body: any,
+    @Req() req: any,
     @Headers("x-hub-signature-256") signature: string | undefined,
     @Res() res: Response,
   ) {
-    const rawBody = typeof body === "string" ? body : JSON.stringify(body);
-    if (!this.wa.verifySignature(rawBody, signature)) {
+    const rawBody = req.rawBody;
+    if (!rawBody) {
+      this.logger.warn("WhatsApp webhook: rawBody not available, cannot verify signature");
+      return res.status(400).send("Raw body unavailable");
+    }
+    const rawBodyString = Buffer.isBuffer(rawBody) ? rawBody.toString("utf8") : String(rawBody);
+    if (!this.wa.verifySignature(rawBodyString, signature)) {
       this.logger.warn("WhatsApp webhook signature verification failed");
       return res.status(401).send("Invalid signature");
     }

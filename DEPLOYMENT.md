@@ -31,8 +31,8 @@ FRONTEND_URL="https://amplizo.com"
 # CORS (comma-separated)
 ALLOWED_ORIGINS="https://amplizo.com,https://www.amplizo.com"
 
-# WhatsApp Webhook
-META_WEBHOOK_VERIFY_TOKEN="your-secure-verify-token"
+# WhatsApp Webhook Verification Token (REQUIRED)
+WHATSAPP_VERIFY_TOKEN="your-secure-verify-token"
 
 # Optional: Payment (Razorpay)
 PAYMENT_PROVIDER="razorpay"

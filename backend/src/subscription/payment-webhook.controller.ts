@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, Ip, Logger, BadRequestException } from "@nestjs/common";
+import { Controller, Post, Body, Headers, Ip, Logger, BadRequestException, Req } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { SubscriptionService } from "./subscription.service";
 import { createHmac, timingSafeEqual } from "crypto";
@@ -13,7 +13,7 @@ export class PaymentWebhookController {
   ) {}
 
   @Post("payments/webhook")
-  async handleWebhook(@Body() payload: any, @Headers("x-razorpay-signature") razorpaySignature: string | undefined, @Ip() ip: string) {
+  async handleWebhook(@Body() payload: any, @Req() req: any, @Headers("x-razorpay-signature") razorpaySignature: string | undefined, @Ip() ip: string) {
     const isProduction = process.env.NODE_ENV === "production";
     const webhookSecret = this.config.get<string>("RAZORPAY_WEBHOOK_SECRET") || process.env.RAZORPAY_WEBHOOK_SECRET;
 
@@ -30,8 +30,13 @@ export class PaymentWebhookController {
       }
       this.logger.warn("Missing x-razorpay-signature header in non-production.", { ip });
     } else {
-      const body = JSON.stringify(payload);
-      const expected = createHmac("sha256", webhookSecret).update(body, "utf8").digest("hex");
+      const rawBody = req.rawBody;
+      if (!rawBody) {
+        this.logger.error("Raw body unavailable for Razorpay signature verification.", { ip });
+        throw new BadRequestException("Raw body unavailable");
+      }
+      const rawBodyString = Buffer.isBuffer(rawBody) ? rawBody.toString("utf8") : String(rawBody);
+      const expected = createHmac("sha256", webhookSecret).update(rawBodyString, "utf8").digest("hex");
       const a = Buffer.from(expected);
       const b = Buffer.from(razorpaySignature);
       if (a.length !== b.length || !timingSafeEqual(a, b)) {

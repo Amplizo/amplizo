@@ -57,7 +57,7 @@ git checkout main  # or production branch
 # Backend environment
 cp backend/.env.example backend/.env
 # Edit backend/.env with production values
-# IMPORTANT: Set DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS, META_WEBHOOK_VERIFY_TOKEN
+# IMPORTANT: Set DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS, WHATSAPP_VERIFY_TOKEN
 
 # Frontend environment
 cp frontend/.env.example frontend/.env.production
@@ -284,7 +284,7 @@ docker compose ps
 - [ ] DATABASE_URL
 - [ ] JWT_SECRET (min 32 chars)
 - [ ] ALLOWED_ORIGINS
-- [ ] META_WEBHOOK_VERIFY_TOKEN
+- [ ] WHATSAPP_VERIFY_TOKEN
 - [ ] NODE_ENV=production
 - [ ] FRONTEND_URL
 - [ ] Optional: PAYMENT_PROVIDER, RAZORPAY_*
