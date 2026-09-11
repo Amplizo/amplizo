@@ -1,4 +1,5 @@
 # Amplizo - AI-Powered Live Chat Platform
+<!-- deployment: verified 2026-09-11, commit 76cf0b6 + CI/CD fixes -->
 
 <div align="center">
 
