@@ -108,7 +108,7 @@ export default function HomePage() {
             </div>
 
             <nav className="hidden lg:flex items-center gap-8">
-              <a href="/" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Home</a>
+              <a href="/" className="text-sm font-medium text-blue-600 underline underline-offset-4" aria-current="page">Home</a>
               <a href="#about" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">About Us</a>
               <a href="#services" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Services</a>
               <a href="#solutions" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Solutions</a>
@@ -120,7 +120,7 @@ export default function HomePage() {
             <div className="hidden md:flex items-center gap-4">
               <a href="/login" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Sign In</a>
               <a href="/login" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
-                Get Started <ChevronRight className="w-4 h-4" />
+                Start Free Trial <ChevronRight className="w-4 h-4" />
               </a>
             </div>
 
@@ -137,7 +137,7 @@ export default function HomePage() {
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-gray-100 bg-white">
             <div className="px-4 py-4 space-y-3">
-              <a href="/" className="block text-sm font-medium text-gray-700 py-2">Home</a>
+              <a href="/" className="block text-sm font-semibold text-blue-600 py-2" aria-current="page">Home</a>
               <a href="#about" className="block text-sm font-medium text-gray-700 py-2">About Us</a>
               <a href="#services" className="block text-sm font-medium text-gray-700 py-2">Services</a>
               <a href="#solutions" className="block text-sm font-medium text-gray-700 py-2">Solutions</a>
@@ -147,7 +147,7 @@ export default function HomePage() {
               <div className="pt-3 border-t border-gray-100 flex flex-col gap-3">
                 <a href="/login" className="text-sm font-medium text-gray-700 py-2">Sign In</a>
                 <a href="/login" className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium">
-                  Get Started <ChevronRight className="w-4 h-4" />
+                  Start Free Trial <ChevronRight className="w-4 h-4" />
                 </a>
               </div>
             </div>
@@ -168,12 +168,12 @@ export default function HomePage() {
                 <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-lg">
                   Connect with your website visitors instantly. No WhatsApp, no Telegram, no external dependencies. Pure, independent, real-time communication that you fully control.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                <div className="flex flex-col sm:flex-row gap-4 mt-6">
                   <a
                     href="/login"
-                    className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
                   >
-                    Start Free Trial
+                    Start Free Trial <ChevronRight className="w-4 h-4" />
                   </a>
                   <a
                     href="#services"
@@ -251,7 +251,7 @@ export default function HomePage() {
         {/* Services Section */}
         <section id="services" className="py-16 lg:py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="text-center max-w-3xl mx-auto mb-10">
               <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">What We Do</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Solutions Built for Your Success</h2>
               <p className="text-lg text-gray-600">Everything you need to delight customers and grow your business with independent communication.</p>
@@ -302,29 +302,29 @@ export default function HomePage() {
                 <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl p-8 lg:p-10">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
-                        <Headphones className="w-5 h-5 text-blue-600" />
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-3 text-blue-600">
+                        <Headphones className="w-5 h-5" />
                       </div>
                       <p className="font-semibold text-gray-900 text-sm">24/7 Support</p>
                       <p className="text-xs text-gray-500 mt-1">AI agents never sleep</p>
                     </div>
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-3">
-                        <TrendingUp className="w-5 h-5 text-green-600" />
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-3 text-blue-600">
+                        <TrendingUp className="w-5 h-5" />
                       </div>
                       <p className="font-semibold text-gray-900 text-sm">Growth</p>
                       <p className="text-xs text-gray-500 mt-1">Scale without limits</p>
                     </div>
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                      <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3">
-                        <Award className="w-5 h-5 text-purple-600" />
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-3 text-blue-600">
+                        <Award className="w-5 h-5" />
                       </div>
                       <p className="font-semibold text-gray-900 text-sm">Quality</p>
                       <p className="text-xs text-gray-500 mt-1">Enterprise grade</p>
                     </div>
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                      <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-3">
-                        <Shield className="w-5 h-5 text-orange-600" />
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-3 text-blue-600">
+                        <Shield className="w-5 h-5" />
                       </div>
                       <p className="font-semibold text-gray-900 text-sm">Security</p>
                       <p className="text-xs text-gray-500 mt-1">Data protection</p>
@@ -344,9 +344,9 @@ export default function HomePage() {
                 </p>
                 <a
                   href="/login"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
                 >
-                  Get Started <ChevronRight className="w-4 h-4" />
+                  Start Free Trial <ChevronRight className="w-4 h-4" />
                 </a>
               </div>
             </div>
@@ -362,10 +362,10 @@ export default function HomePage() {
               <p className="text-lg text-gray-600">Production-ready features designed for modern businesses that want full control.</p>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
               {features.map((feature, index) => (
                 <div key={index} className="flex gap-4 p-5 rounded-xl hover:bg-gray-50 transition-colors">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                     {feature.icon}
                   </div>
                   <div>
@@ -421,14 +421,15 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="/login"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-white text-blue-600 font-semibold hover:bg-gray-100 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg bg-white text-blue-600 font-semibold hover:bg-gray-100 transition-colors"
               >
-                Start Free Trial
+                Start Free Trial <ChevronRight className="w-4 h-4" />
               </a>
               <a
                 href="/help"
-                className="inline-flex items-center justify-center px-8 py-4 rounded-lg border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-colors"
               >
+                <MessageCircle className="w-5 h-5" />
                 Talk to Sales
               </a>
             </div>
@@ -451,7 +452,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-4">Quick Links</h4>
+              <h3 className="font-semibold text-white mb-4">Quick Links</h3>
               <ul className="space-y-2 text-sm text-gray-400">
                 {footerLinks.quickLinks.map((link, i) => (
                   <li key={i}><a href={link.href} className="hover:text-white transition-colors">{link.label}</a></li>
@@ -460,7 +461,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-4">Services</h4>
+              <h3 className="font-semibold text-white mb-4">Services</h3>
               <ul className="space-y-2 text-sm text-gray-400">
                 {footerLinks.services.map((link, i) => (
                   <li key={i}><a href={link.href} className="hover:text-white transition-colors">{link.label}</a></li>
@@ -469,7 +470,7 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
+              <h3 className="font-semibold text-white mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-gray-400">
                 {footerLinks.company.map((link, i) => (
                   <li key={i}><a href={link.href} className="hover:text-white transition-colors">{link.label}</a></li>
@@ -478,16 +479,16 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h4 className="font-semibold text-white mb-4">Newsletter</h4>
+              <h3 className="font-semibold text-white mb-4">Newsletter</h3>
               <p className="text-sm text-gray-400 mb-3">Stay updated with our latest features.</p>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="email"
                   placeholder="Enter email"
-                  className="flex-1 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                 />
-                <button className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
-                  <ArrowRight className="w-4 h-4" />
+                <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors sm:px-6 shrink-0">
+                  Subscribe <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>

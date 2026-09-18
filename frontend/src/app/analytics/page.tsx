@@ -3,9 +3,10 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BackButton } from "@/components/ui/BackButton";
+import { Button } from "@/components/ui/Button";
 import { useAuthStore } from "@/store";
 import { api } from "@/lib/api";
-import { BarChart3, Users, MessageCircle, TrendingUp, Clock, Star, ArrowUpRight, ArrowDownRight, Calendar } from "lucide-react";
+import { BarChart3, Users, MessageCircle, TrendingUp, Clock, Star, ArrowUpRight, ArrowDownRight, Calendar, BarChart2 } from "lucide-react";
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -58,9 +59,14 @@ export default function AnalyticsPage() {
       <div className="space-y-6">
         <div className="flex gap-2">
           {(["7d", "30d", "90d"] as const).map((p) => (
-            <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${period === p ? "bg-brand-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
+            <Button
+              key={p}
+              onClick={() => setPeriod(p)}
+              variant={period === p ? "primary" : "secondary"}
+              size="sm"
+            >
               {p === "7d" ? "7 Days" : p === "30d" ? "30 Days" : "90 Days"}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -89,7 +95,7 @@ export default function AnalyticsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Chat Volume</h3>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Chat Volume</h2>
             {chatVolume.length > 0 ? (
               <div className="h-48 flex items-end gap-2">
                 {chatVolume.map((item: any, i: number) => {
@@ -103,12 +109,20 @@ export default function AnalyticsPage() {
                 })}
               </div>
             ) : (
-              <div className="h-48 flex items-center justify-center text-gray-500 text-sm">No chat volume data available</div>
+              <div className="h-48 flex flex-col items-center justify-center gap-3 text-center p-4">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <BarChart2 className="w-6 h-6 text-gray-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">No chat volume data</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">No chat activity recorded for this period</p>
+                </div>
+              </div>
             )}
           </div>
 
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Agents</h3>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Agents</h2>
             {topAgents.length > 0 ? (
               <div className="space-y-3">
                 {topAgents.map((agent: any, i: number) => (
@@ -124,7 +138,15 @@ export default function AnalyticsPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-gray-500 text-sm">No agent data available</div>
+              <div className="h-32 flex flex-col items-center justify-center gap-3 text-center p-4">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-gray-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">No agent data</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">No agent activity recorded for this period</p>
+                </div>
+              </div>
             )}
           </div>
         </div>

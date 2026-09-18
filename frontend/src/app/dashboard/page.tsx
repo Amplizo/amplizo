@@ -82,10 +82,6 @@ export default function DashboardPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your business at a glance</p>
-        </div>
         {loading && <Loader2 className="h-5 w-5 animate-spin text-[#0A66FF]" />}
       </div>
 
@@ -146,9 +142,9 @@ export default function DashboardPage() {
             View all <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div>
+        <div className="flex-1 flex items-center justify-center">
           {todayFollowUps.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex flex-col items-center justify-center text-center w-full">
               <div className="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mb-2">
                 <CheckCircle2 className="h-6 w-6 text-emerald-600" />
               </div>
@@ -190,32 +186,44 @@ export default function DashboardPage() {
 
 function StatCard({ label, value, hint, icon, accent }: { label: string; value: any; hint?: string; icon: React.ReactNode; accent: "blue" | "emerald" | "amber" }) {
   const colors = {
-    blue: "from-blue-500 to-cyan-500",
-    emerald: "from-emerald-500 to-teal-500",
-    amber: "from-amber-500 to-orange-500",
+    blue: "bg-blue-500",
+    emerald: "bg-emerald-500",
+    amber: "bg-amber-500",
   }[accent];
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 group hover:border-[#0A66FF] hover:shadow-sm transition-all cursor-pointer">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{label}</p>
-        <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${colors} text-white flex items-center justify-center`}>
+        <div className={`h-8 w-8 rounded-lg ${colors} text-white flex items-center justify-center`}>
           {icon}
         </div>
       </div>
       <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
       {hint && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{hint}</p>}
+      <div className="flex justify-end mt-2">
+        <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-[#0A66FF] transition-colors opacity-0 group-hover:opacity-100" />
+      </div>
     </div>
   );
 }
 
 function LeadStatCard({ label, value, icon, color, bg }: { label: string; value: number; icon: React.ReactNode; color: string; bg: string }) {
+  const bgColor = bg.replace("bg-", "").replace("dark:", "dark:bg-");
+  const iconBg = bgColor.includes("rose") ? "bg-rose-500" :
+                 bgColor.includes("blue") ? "bg-blue-500" :
+                 bgColor.includes("gray") ? "bg-gray-500" : "bg-gray-500";
   return (
-    <div className={`${bg} rounded-2xl p-4 border border-gray-200 dark:border-gray-800`}>
+    <div className={`${bg} rounded-2xl p-4 border border-gray-200 dark:border-gray-800 group hover:border-[#0A66FF] hover:shadow-sm transition-all cursor-pointer`}>
       <div className="flex items-center gap-2">
-        <div className={color}>{icon}</div>
+        <div className={`h-8 w-8 rounded-lg ${iconBg} text-white flex items-center justify-center`}>
+          {icon}
+        </div>
         <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{label}</p>
       </div>
       <p className={`text-2xl font-bold mt-2 ${color}`}>{value}</p>
+      <div className="flex justify-end mt-2">
+        <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-[#0A66FF] transition-colors opacity-0 group-hover:opacity-100" />
+      </div>
     </div>
   );
 }
@@ -224,7 +232,7 @@ function QuickLink({ href, label, icon }: { href: string; label: string; icon: R
   return (
     <Link
       href={href}
-      className="flex items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-[#0A66FF] hover:shadow-sm transition-all group"
+      className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-[#0A66FF] hover:shadow-sm transition-all group"
     >
       <div className="flex items-center gap-2">
         <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-[#0A66FF] flex items-center justify-center group-hover:bg-[#0A66FF] group-hover:text-white transition-colors">

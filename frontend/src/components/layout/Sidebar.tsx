@@ -6,9 +6,9 @@ import { useAuthStore } from "@/store";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LogOut } from "lucide-react";
 
-interface SidebarProps { activeRoute: string; onNavigate: (route: string) => void; }
+interface SidebarProps { activeRoute: string; onNavigate: (route: string) => void; onLogout?: () => void; }
 
-export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
+export function Sidebar({ activeRoute, onNavigate, onLogout }: SidebarProps) {
   const { logout, agent } = useAuthStore();
   const isAdmin = agent?.role === "admin";
   const navRef = useRef<HTMLElement>(null);
@@ -47,6 +47,7 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
     { id: "analytics", label: "Analytics", icon: BarChart3, section: "tools" },
     { id: "settings", label: "Settings", icon: Settings, section: "system" },
     { id: "profile", label: "Profile", icon: User, section: "system" },
+    { id: "logout", label: "Logout", icon: LogOut, section: "system", action: "logout" as const },
   ];
 
   const clientNavItems = [
@@ -58,6 +59,7 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
     { id: "subscription", label: "Subscription", icon: CreditCard, section: "system" },
     { id: "settings", label: "Settings", icon: Settings, section: "system" },
     { id: "profile", label: "Profile", icon: User, section: "system" },
+    { id: "logout", label: "Logout", icon: LogOut, section: "system", action: "logout" as const },
   ];
 
   const adminSections = [
@@ -85,7 +87,7 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
       <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <img src="/logo.png" alt="Amplizo" className="h-10 w-10 object-contain shrink-0" />
         <div>
-          <h1 className="font-bold text-gray-900 dark:text-gray-100 tracking-tight">Amplizo</h1>
+          <div className="font-bold text-gray-900 dark:text-gray-100 tracking-tight">Amplizo</div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {isAdmin ? "Admin Panel" : "AI Platform"}
           </p>
@@ -94,30 +96,30 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
 
       <nav ref={navRef} className="flex-1 px-3 py-4 overflow-y-auto">
         {/* Live Chat - shown for client only (admin doesn't have it) */}
-        {primaryItems.length > 0 && (
-          <div className="mb-4">
-            {primaryItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeRoute === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.98]",
-                    isActive
-                      ? "bg-gradient-to-r from-[#0A66FF] to-[#00C6FF] text-white shadow-sm"
-                      : "bg-blue-50 dark:bg-blue-900/20 text-[#0A66FF] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30"
-                  )}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {isActive && <span className="h-2 w-2 rounded-full bg-white" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
+{primaryItems.length > 0 && (
+            <div className="mb-3">
+              {primaryItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeRoute === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onNavigate(item.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-[0.98]",
+                      isActive
+                        ? "bg-gradient-to-r from-[#0A66FF] to-[#00C6FF] text-white shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-[#0A66FF] border border-[#0A66FF] hover:bg-[#0A66FF] hover:text-white dark:hover:bg-[#0A66FF] shadow-sm"
+                    )}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {isActive && <span className="h-2 w-2 rounded-full bg-white" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
         {groupedItems.map((section) => (
           <div key={section.id} className="mb-4">
@@ -128,20 +130,23 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeRoute === item.id;
+                const isLogout = item.action === "logout";
                 return (
                   <button
                     key={item.id}
-                    onClick={() => onNavigate(item.id)}
+                    onClick={isLogout ? onLogout : () => onNavigate(item.id)}
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.98]",
-                      isActive
+                      isLogout
+                        ? "text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+                        : isActive
                         ? "bg-[#0A66FF] text-white shadow-sm hover:bg-[#0952CC]"
                         : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
                     )}
                   >
-                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-white" : "")} />
+                    <Icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-white" : isLogout ? "" : "")} />
                     <span className="flex-1 text-left truncate">{item.label}</span>
-                    {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white shrink-0" />}
+                    {isActive && !isLogout && <span className="h-1.5 w-1.5 rounded-full bg-white shrink-0" />}
                   </button>
                 );
               })}
@@ -149,16 +154,6 @@ export function Sidebar({ activeRoute, onNavigate }: SidebarProps) {
           </div>
         ))}
       </nav>
-
-      <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <button
-          onClick={() => setShowLogoutDialog(true)}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Logout</span>
-        </button>
-      </div>
 
       <ConfirmDialog
         isOpen={showLogoutDialog}

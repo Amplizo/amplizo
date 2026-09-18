@@ -19,10 +19,21 @@ async function bootstrap() {
   const logger = app.get(WinstonLogger);
   app.useLogger(logger);
 
+  app.use((req, res, next) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      console.log('DEBUG RAW BODY:', data);
+      req.rawBodyDebug = data;
+    });
+    next();
+  });
+
   app.use(
     json({
       verify: (req: any, _res, buf) => {
         req.rawBody = buf;
+        console.log('DEBUG VERIFY BUF:', buf.toString('utf8'));
       },
     }),
   );

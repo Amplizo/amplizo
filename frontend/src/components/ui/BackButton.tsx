@@ -2,6 +2,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface BackButtonProps {
   fallback?: string;
@@ -23,13 +24,15 @@ export function BackButton({ fallback, label = "Back", className = "" }: BackBut
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="md"
       onClick={handleClick}
-      className={`inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors ${className}`}
+      className={`gap-2 ${className}`}
     >
       <ArrowLeft className="h-4 w-4" />
       {label}
-    </button>
+    </Button>
   );
 }

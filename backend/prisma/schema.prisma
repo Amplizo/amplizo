@@ -8,55 +8,54 @@ datasource db {
 }
 
 model Agent {
-  id           String    @id @default(uuid())
-  name         String
-  email        String    @unique
-  password     String
-  role         String    @default("agent")
-  mobile       String?
-  status       String    @default("offline")
-  isActive     Boolean   @default(true)
-  avatar       String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
-
-  refreshTokens    RefreshToken[]
-  chats            Chat[]   @relation("AgentChats")
-  sessions         Session[]
-  passwordReset    PasswordReset?
-  notifications    Notification[]
-  assignedClients  Client[] @relation("AssignedAgent")
-  createdPurchases Purchase[] @relation("PurchaseCreator")
-  assignedFollowUps FollowUp[] @relation("FollowUpAssignee")
-  completedFollowUps FollowUp[] @relation("FollowUpCompleter")
-  activityLogs     ActivityLog[] @relation("ActivityActor")
-  assignmentsGiven CustomerAssignment[] @relation("AssignmentActor")
-  whatsAppConversations WhatsAppConversation[] @relation("WhatsAppConversations")
+  id                       String                    @id @default(uuid())
+  name                     String
+  email                    String                    @unique
+  password                 String
+  role                     String                    @default("agent")
+  mobile                   String?
+  status                   String                    @default("offline")
+  isActive                 Boolean                   @default(true)
+  avatar                   String?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  deletedAt                DateTime?
+  activityLogs             ActivityLog[]             @relation("ActivityActor")
+  chats                    Chat[]                    @relation("AgentChats")
+  assignedClients          Client[]                  @relation("AssignedAgent")
+  assignmentsGiven         CustomerAssignment[]      @relation("AssignmentActor")
+  assignmentsReceived      CustomerAssignment[]      @relation("AssignmentEmployee")
+  assignedFollowUps        FollowUp[]                @relation("FollowUpAssignee")
+  completedFollowUps       FollowUp[]                @relation("FollowUpCompleter")
+  sentFollowUps            FollowUp[]                @relation("FollowUpSender")
+  notifications            Notification[]
+  passwordReset            PasswordReset?
+  payments                 Payment[]
+  createdPurchases         Purchase[]                @relation("PurchaseCreator")
+  refreshTokens            RefreshToken[]
+  scheduledCalls           ScheduledCall[]
+  sessions                 Session[]
+  subscriptions            Subscription[]
+  whatsAppConversations    WhatsAppConversation[]    @relation("WhatsAppConversations")
   whatsAppPhoneAssignments WhatsAppPhoneAssignment[] @relation("WhatsAppPhoneAssignments")
-  assignmentsReceived CustomerAssignment[] @relation("AssignmentEmployee")
-  scheduledCalls   ScheduledCall[]
-  sentFollowUps    FollowUp[] @relation("FollowUpSender")
-  subscriptions    Subscription[]
-  payments         Payment[]
 }
 
 model RefreshToken {
   id        String   @id @default(uuid())
   token     String   @unique
   agentId   String
-  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
 }
 
 model Session {
   id        String   @id @default(uuid())
   agentId   String
-  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
 }
 
 model Visitor {
@@ -67,29 +66,27 @@ model Visitor {
   metadata   String?
   createdAt  DateTime @default(now())
   lastSeenAt DateTime @default(now())
-
-  chats Chat[]
+  chats      Chat[]
 }
 
 model Chat {
-  id              String    @id @default(uuid())
-  visitorId       String
-  visitor         Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
-  clientId        String?
-  client          Client?   @relation(fields: [clientId], references: [id])
-  agentId         String?
-  agent           Agent?    @relation("AgentChats", fields: [agentId], references: [id])
-  status          String    @default("waiting")
-  conversationState String  @default("AI_ACTIVE")
-  subject         String?
-  tags            String    @default("")
-  unreadCount     Int       @default(0)
-  closedAt        DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
-
-  messages Message[]
+  id                String    @id @default(uuid())
+  visitorId         String
+  clientId          String?
+  agentId           String?
+  status            String    @default("waiting")
+  conversationState String    @default("AI_ACTIVE")
+  subject           String?
+  tags              String    @default("")
+  unreadCount       Int       @default(0)
+  closedAt          DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+  agent             Agent?    @relation("AgentChats", fields: [agentId], references: [id])
+  client            Client?   @relation(fields: [clientId], references: [id])
+  visitor           Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  messages          Message[]
 
   @@index([status])
   @@index([agentId])
@@ -102,21 +99,20 @@ model Chat {
 }
 
 model Message {
-  id         String    @id @default(uuid())
-  chatId     String
-  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  senderId   String
-  senderType String
-  senderName String?
-  content    String    @default("")
-  status     String    @default("sent")
-  replyTo    String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
+  id          String       @id @default(uuid())
+  chatId      String
+  senderId    String
+  senderType  String
+  senderName  String?
+  content     String       @default("")
+  status      String       @default("sent")
+  replyTo     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   attachments Attachment[]
-  replyToMsg Message?  @relation("MessageReply", fields: [replyTo], references: [id])
-  replies    Message[] @relation("MessageReply")
+  chat        Chat         @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  replyToMsg  Message?     @relation("MessageReply", fields: [replyTo], references: [id])
+  replies     Message[]    @relation("MessageReply")
 
   @@index([chatId])
   @@index([senderId])
@@ -125,7 +121,6 @@ model Message {
 model Attachment {
   id           String   @id @default(uuid())
   messageId    String
-  message      Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   url          String
   thumbnailUrl String?
   fileName     String
@@ -134,78 +129,76 @@ model Attachment {
   type         String
   duration     Int?
   createdAt    DateTime @default(now())
+  message      Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@index([messageId])
 }
 
 model AdminStats {
-  id          String   @id @default(uuid())
-  date        DateTime @default(now())
-  totalVisitors     Int @default(0)
-  activeChats       Int @default(0)
-  closedChatsToday  Int @default(0)
-  onlineAgents      Int @default(0)
-  totalMessages     Int @default(0)
-  storageUsedMB     Float @default(0)
-  avgResponseTimeSec Int @default(0)
-  satisfactionRate  Int @default(0)
-
-  @@unique([date])
+  id                 String   @id @default(uuid())
+  date               DateTime @unique @default(now())
+  totalVisitors      Int      @default(0)
+  activeChats        Int      @default(0)
+  closedChatsToday   Int      @default(0)
+  onlineAgents       Int      @default(0)
+  totalMessages      Int      @default(0)
+  storageUsedMB      Float    @default(0)
+  avgResponseTimeSec Int      @default(0)
+  satisfactionRate   Int      @default(0)
 }
 
 model OTP {
-  id           String    @id @default(uuid())
-  phone        String    @unique
-  otpHash      String
-  expiresAt    DateTime
-  verified     Boolean   @default(false)
-  attempts     Int       @default(0)
-  maxAttempts  Int       @default(5)
-  ipAddress    String?
-  userAgent    String?
+  id            String    @id @default(uuid())
+  phone         String    @unique
+  expiresAt     DateTime
+  verified      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  attempts      Int       @default(0)
+  ipAddress     String?
   lastAttemptAt DateTime?
-  createdAt    DateTime  @default(now())
+  maxAttempts   Int       @default(5)
+  otpHash       String
+  userAgent     String?
 }
 
 model PasswordReset {
   id        String   @id @default(uuid())
   agentId   String   @unique
-  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
   token     String   @unique
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
 }
 
 model Client {
-  id                  String   @id @default(uuid())
-  name                String
-  email               String?  @unique
-  phone               String?  @unique
-  city                String?
-  plan                String   @default("Starter")
-  status              String   @default("Active")
-  source              String?  @default("Direct")
-  notes               String?
-  totalChats          Int      @default(0)
-  satisfaction        Int      @default(0)
-  currentLeadStatus   String   @default("NEW")
-  assignedEmployeeId  String?
-  assignedEmployee    Agent?   @relation("AssignedAgent", fields: [assignedEmployeeId], references: [id])
-  externalPlatformId  String?  @unique
-  joined              DateTime @default(now())
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  purchases        Purchase[]
-  followUpCycles   FollowUpCycle[]
-  followUps        FollowUp[]
-  activityLogs     ActivityLog[]
-  assignments      CustomerAssignment[]
-  chatThreads      Chat[]
-  smsLogs          SmsLog[]
+  id                    String                 @id @default(uuid())
+  name                  String
+  email                 String?                @unique
+  phone                 String?                @unique
+  city                  String?
+  plan                  String                 @default("Starter")
+  status                String                 @default("Active")
+  source                String?                @default("Direct")
+  notes                 String?
+  totalChats            Int                    @default(0)
+  satisfaction          Int                    @default(0)
+  currentLeadStatus     String                 @default("NEW")
+  assignedEmployeeId    String?
+  externalPlatformId    String?                @unique
+  joined                DateTime               @default(now())
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  activityLogs          ActivityLog[]
+  chatThreads           Chat[]
+  assignedEmployee      Agent?                 @relation("AssignedAgent", fields: [assignedEmployeeId], references: [id])
+  assignments           CustomerAssignment[]
+  followUps             FollowUp[]
+  followUpCycles        FollowUpCycle[]
+  purchases             Purchase[]
+  scheduledCalls        ScheduledCall[]
+  smsLogs               SmsLog[]
   whatsAppConversations WhatsAppConversation[]
-  scheduledCalls   ScheduledCall[]
 
   @@index([phone])
   @@index([currentLeadStatus])
@@ -219,7 +212,6 @@ model Client {
 model Notification {
   id        String   @id @default(uuid())
   agentId   String?
-  agent     Agent?   @relation(fields: [agentId], references: [id], onDelete: Cascade)
   type      String
   title     String
   message   String
@@ -227,6 +219,7 @@ model Notification {
   link      String?
   metadata  String?
   createdAt DateTime @default(now())
+  agent     Agent?   @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId])
   @@index([read])
@@ -234,18 +227,17 @@ model Notification {
 }
 
 model Purchase {
-  id              String   @id @default(uuid())
-  clientId        String
-  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  purchaseAmount  Float
-  productDetails  String?
-  purchaseDate    DateTime @default(now())
-  createdById     String?
-  createdBy       Agent?   @relation("PurchaseCreator", fields: [createdById], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  followUpCycle   FollowUpCycle?
+  id             String         @id @default(uuid())
+  clientId       String
+  purchaseAmount Float
+  productDetails String?
+  purchaseDate   DateTime       @default(now())
+  createdById    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  followUpCycle  FollowUpCycle?
+  client         Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy      Agent?         @relation("PurchaseCreator", fields: [createdById], references: [id])
 
   @@index([clientId])
   @@index([purchaseDate])
@@ -253,46 +245,44 @@ model Purchase {
 }
 
 model FollowUpCycle {
-  id          String   @id @default(uuid())
-  clientId    String
-  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  purchaseId  String   @unique
-  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  status      String   @default("ACTIVE")
+  id              String     @id @default(uuid())
+  clientId        String
+  purchaseId      String     @unique
+  status          String     @default("ACTIVE")
   cancelledReason String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  followUps   FollowUp[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  followUps       FollowUp[]
+  client          Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  purchase        Purchase   @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([status])
 }
 
 model FollowUp {
-  id                  String    @id @default(uuid())
-  cycleId             String
-  cycle               FollowUpCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  clientId            String
-  client              Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  purchaseId          String
-  followUpNumber      Int
-  scheduledDate       DateTime
-  status              String    @default("PENDING")
-  assignedEmployeeId  String?
-  assignedEmployee    Agent?    @relation("FollowUpAssignee", fields: [assignedEmployeeId], references: [id])
-  notes               String?
-  completedAt         DateTime?
-  completedById       String?
-  completedBy         Agent?    @relation("FollowUpCompleter", fields: [completedById], references: [id])
-  sentAt              DateTime?
-  sentById            String?
-  sentBy              Agent?    @relation("FollowUpSender", fields: [sentById], references: [id])
-  error               String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  smsLogs             SmsLog[]
+  id                 String        @id @default(uuid())
+  cycleId            String
+  clientId           String
+  purchaseId         String
+  followUpNumber     Int
+  scheduledDate      DateTime
+  status             String        @default("PENDING")
+  assignedEmployeeId String?
+  notes              String?
+  completedAt        DateTime?
+  completedById      String?
+  sentAt             DateTime?
+  sentById           String?
+  error              String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  assignedEmployee   Agent?        @relation("FollowUpAssignee", fields: [assignedEmployeeId], references: [id])
+  client             Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  completedBy        Agent?        @relation("FollowUpCompleter", fields: [completedById], references: [id])
+  cycle              FollowUpCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  sentBy             Agent?        @relation("FollowUpSender", fields: [sentById], references: [id])
+  smsLogs            SmsLog[]
 
   @@index([clientId])
   @@index([scheduledDate])
@@ -303,15 +293,15 @@ model FollowUp {
 }
 
 model ActivityLog {
-  id            String   @id @default(uuid())
-  clientId      String?
-  client        Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  userId        String?
-  user          Agent?   @relation("ActivityActor", fields: [userId], references: [id])
-  activityType  String
-  description   String
-  metadata      String?
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  clientId     String?
+  userId       String?
+  activityType String
+  description  String
+  metadata     String?
+  createdAt    DateTime @default(now())
+  client       Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user         Agent?   @relation("ActivityActor", fields: [userId], references: [id])
 
   @@index([clientId])
   @@index([activityType])
@@ -319,33 +309,33 @@ model ActivityLog {
 }
 
 model CustomerAssignment {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   clientId     String
-  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   employeeId   String
-  employee     Agent    @relation("AssignmentEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
   assignedById String?
-  assignedBy   Agent?   @relation("AssignmentActor", fields: [assignedById], references: [id])
-  assignedAt   DateTime @default(now())
+  assignedAt   DateTime  @default(now())
   unassignedAt DateTime?
+  assignedBy   Agent?    @relation("AssignmentActor", fields: [assignedById], references: [id])
+  client       Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  employee     Agent     @relation("AssignmentEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([employeeId])
 }
 
 model SmsLog {
-  id          String   @id @default(uuid())
-  to          String
-  body        String
-  status      String
-  sid         String?
-  error       String?
-  type        String?
-  clientId    String?
-  client      Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  followUpId  String?
-  followUp    FollowUp? @relation(fields: [followUpId], references: [id], onDelete: SetNull)
-  sentAt      DateTime @default(now())
+  id         String    @id @default(uuid())
+  to         String
+  body       String
+  status     String
+  sid        String?
+  error      String?
+  type       String?
+  clientId   String?
+  followUpId String?
+  sentAt     DateTime  @default(now())
+  client     Client?   @relation(fields: [clientId], references: [id])
+  followUp   FollowUp? @relation(fields: [followUpId], references: [id])
 
   @@index([clientId])
   @@index([followUpId])
@@ -354,38 +344,25 @@ model SmsLog {
 }
 
 model WhatsAppConversation {
-  id                String   @id @default(uuid())
-  // Tenant isolation: each conversation is owned by exactly one agent/employee
-  ownerAgentId      String
-  ownerAgent        Agent    @relation("WhatsAppConversations", fields: [ownerAgentId], references: [id], onDelete: Cascade)
-  // Customer link (optional - can be created first then linked)
-  clientId          String?
-  client            Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  // Customer's WhatsApp phone number (E.164, the key Meta uses to reach this person)
-  remotePhone       String
-  // Customer's display name (pulled from profile or first message)
-  remoteName        String?
-  // WhatsApp profile picture (optional)
-  remoteAvatarUrl   String?
-  // Last activity (used for sorting conversation list)
-  lastMessageAt     DateTime @default(now())
-  // Last message preview
-  lastMessagePreview String?
+  id                   String                 @id @default(uuid())
+  ownerAgentId         String
+  clientId             String?
+  remotePhone          String
+  remoteName           String?
+  remoteAvatarUrl      String?
+  lastMessageAt        DateTime               @default(now())
+  lastMessagePreview   String?
   lastMessageDirection String?
-  // Unread count (incremented on inbound, reset when agent opens/sends)
-  unreadCount       Int      @default(0)
-  // Conversation state: OPEN | UNASSIGNED | CLOSED
-  // UNASSIGNED = orphan lead in admin pool (no tenant mapped to this phoneNumberId)
-  status            String   @default("OPEN")
-  // Per-conversation override for which Meta phone number ID is used (optional)
-  phoneNumberId     String?
-  // NEW: tracks if this is an unassigned lead (visible only to admin + assigned tenant)
-  isUnassigned      Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  messages          WhatsAppMessage[]
-  webhookEvents     WhatsAppWebhookEvent[]
+  unreadCount          Int                    @default(0)
+  status               String                 @default("OPEN")
+  phoneNumberId        String?
+  isUnassigned         Boolean                @default(false)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  client               Client?                @relation(fields: [clientId], references: [id])
+  ownerAgent           Agent                  @relation("WhatsAppConversations", fields: [ownerAgentId], references: [id], onDelete: Cascade)
+  messages             WhatsAppMessage[]
+  webhookEvents        WhatsAppWebhookEvent[]
 
   @@unique([ownerAgentId, remotePhone])
   @@index([ownerAgentId])
@@ -398,26 +375,21 @@ model WhatsAppConversation {
 }
 
 model WhatsAppMessage {
-  id                String   @id @default(uuid())
+  id                String               @id @default(uuid())
   conversationId    String
-  conversation      WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  direction         String   // INBOUND | OUTBOUND
-  type              String   @default("text")  // text | image | document | audio | video | template
+  direction         String
+  type              String               @default("text")
   body              String?
   mediaUrl          String?
   mediaMimeType     String?
-  // Status: SENT | DELIVERED | READ | FAILED
-  status            String   @default("PENDING")
-  // Meta's WhatsApp message ID (used for status callbacks)
-  whatsappMessageId String?  @unique
-  // Error info if sending failed
+  status            String               @default("PENDING")
+  whatsappMessageId String?              @unique
   errorCode         String?
   errorMessage      String?
-  // When the agent/user sent it
-  sentAt            DateTime @default(now())
-  // When Meta confirmed status (delivered/read/failed)
+  sentAt            DateTime             @default(now())
   deliveredAt       DateTime?
   readAt            DateTime?
+  conversation      WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([status])
@@ -426,57 +398,45 @@ model WhatsAppMessage {
 }
 
 model WhatsAppWebhookEvent {
-  id              String   @id @default(uuid())
-  // Raw payload Meta sent
-  payload         String
-  // Detected conversation (best-effort)
-  conversationId  String?
-  conversation    WhatsAppConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-  // Event type: message | status | unknown
-  type            String
-  // Dedup key (Meta sends the same wamid in multiple fields)
-  dedupKey        String?  @unique
-  // Processing status: received | processed | failed | ignored
-  processingStatus String  @default("received")
-  processingError String?
-  receivedAt      DateTime @default(now())
+  id               String                @id @default(uuid())
+  payload          String
+  conversationId   String?
+  type             String
+  dedupKey         String?               @unique
+  processingStatus String                @default("received")
+  processingError  String?
+  receivedAt       DateTime              @default(now())
+  conversation     WhatsAppConversation? @relation(fields: [conversationId], references: [id])
 
   @@index([conversationId])
   @@index([type])
   @@index([receivedAt])
 }
 
-// WhatsAppPhoneAssignment maps a Meta WhatsApp phone_number_id to the Amplizo tenant/agent
-// that owns it. If a webhook arrives with a phone_number_id that has no mapping here, the
-// conversation goes to the ADMIN UNASSIGNED POOL (not visible to any client tenant) until
-// admin claims it. This is the security boundary that prevents cross-tenant leak via
-// unassigned leads.
 model WhatsAppPhoneAssignment {
   id            String   @id @default(uuid())
   phoneNumberId String   @unique
-  // The agent/tenant who owns this WhatsApp Business number
   ownerAgentId  String
-  ownerAgent    Agent    @relation("WhatsAppPhoneAssignments", fields: [ownerAgentId], references: [id], onDelete: Cascade)
-  // Free-form label for admin reference
   label         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  ownerAgent    Agent    @relation("WhatsAppPhoneAssignments", fields: [ownerAgentId], references: [id], onDelete: Cascade)
 
   @@index([ownerAgentId])
 }
 
 model ScheduledCall {
-  id                 String    @id @default(uuid())
+  id                 String   @id @default(uuid())
   clientId           String
-  client             Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   assignedEmployeeId String?
-  assignedEmployee   Agent?    @relation(fields: [assignedEmployeeId], references: [id])
   phone              String
   scheduledDate      DateTime
   notes              String?
-  status             String    @default("PENDING")
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  status             String   @default("PENDING")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  assignedEmployee   Agent?   @relation(fields: [assignedEmployeeId], references: [id])
+  client             Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([assignedEmployeeId])
@@ -484,39 +444,35 @@ model ScheduledCall {
 }
 
 model Subscription {
-  id               String    @id @default(uuid())
-  agentId          String
-  agent            Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  planId           String
-  planName         String
-  status           String    @default("active") // active, cancelled, expired, pending, trial
-  amount           Float
-  currency         String    @default("INR")
-  interval         String    @default("month") // month, year
-  startedAt        DateTime  @default(now())
-  expiresAt        DateTime?
-  autoRenew        Boolean   @default(false)
-  canceledAt       DateTime?
-  paymentProvider  String?
-  providerPlanId   String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  payments         Payment[]
+  id              String    @id @default(uuid())
+  planId          String
+  planName        String
+  status          String    @default("active")
+  amount          Float
+  currency        String    @default("INR")
+  interval        String    @default("month")
+  startedAt       DateTime  @default(now())
+  expiresAt       DateTime?
+  autoRenew       Boolean   @default(false)
+  canceledAt      DateTime?
+  paymentProvider String?
+  providerPlanId  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  agentId         String
+  payments        Payment[]
+  agent           Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId])
   @@index([status])
 }
 
 model Payment {
-  id                String    @id @default(uuid())
-  agentId           String
-  agent             Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  id                String        @id @default(uuid())
   subscriptionId    String?
-  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
   amount            Float
-  currency          String    @default("INR")
-  status            String    @default("pending") // pending, paid, failed, cancelled, refunded
+  currency          String        @default("INR")
+  status            String        @default("pending")
   paymentMethod     String?
   provider          String?
   providerOrderId   String?
@@ -525,8 +481,11 @@ model Payment {
   receiptUrl        String?
   errorMessage      String?
   metadata          String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  agentId           String
+  agent             Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
 
   @@index([agentId])
   @@index([providerOrderId])

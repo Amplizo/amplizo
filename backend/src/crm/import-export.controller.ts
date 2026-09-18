@@ -48,8 +48,8 @@ export class ImportExportController {
   async exportCustomers(@Req() req: Request, @Query("format") format: "csv" | "xlsx", @Query("skip") skip: string, @Query("take") take: string, @Res() res: Response) {
     const user = req.user as any;
     const exportFormat = format === "xlsx" ? "xlsx" : "csv";
-    const s = Number(skip);
-    const t = Number(take);
+    const s = skip ? Number(skip) : 0;
+    const t = take ? Number(take) : 1000;
     const result = await this.importExportService.exportCustomers(user.id, user.role === "admin", exportFormat, s, t);
 
     res.set({

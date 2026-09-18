@@ -13,10 +13,26 @@ import { generateId } from "@/lib/utils";
 import { socketService } from "@/lib/socket";
 import { isSameDay } from "date-fns";
 import type { Message, Visitor } from "@/lib/types";
+import { createPortal } from "react-dom";
+
+const FAB = ({ onClick }: { onClick: () => void }) => (
+  <div className="fixed bottom-6 right-6 z-50" style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 50 }}>
+    <Button
+      onClick={onClick}
+      size="lg"
+      className="rounded-full shadow-lg bg-brand-600 hover:bg-brand-700 h-14 w-14"
+      aria-label="Chat with us"
+      title="Chat with us"
+    >
+      <MessageCircle className="w-6 h-6" />
+    </Button>
+  </div>
+);
 
 export function VisitorWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<"form" | "chat">("form");
@@ -27,7 +43,7 @@ export function VisitorWidget() {
   const chatId = activeChat?.id;
   const currentMessages = activeChat?.id ? messages[activeChat.id] || [] : [];
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [currentMessages.length]);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => { if (visitor && step === "form") setStep("chat"); }, [visitor, step]);
 
   const handleStartChat = async (e: React.FormEvent) => {
@@ -53,7 +69,8 @@ export function VisitorWidget() {
   const typingNames = Object.values(typingUsers).filter((t) => t.isTyping && t.chatId === chatId).map((t) => t.userName);
   const shouldShowDateSeparator = (index: number) => { if (index === 0) return true; return !isSameDay(new Date(currentMessages[index].createdAt), new Date(currentMessages[index - 1].createdAt)); };
 
-  if (!isOpen) return <div className="fixed bottom-6 right-6 z-50"><Button onClick={() => setIsOpen(true)} size="lg" className="rounded-full shadow-lg bg-brand-600 hover:bg-brand-700 h-14 w-14"><MessageCircle className="w-6 h-6" /></Button></div>;
+  if (!isOpen && mounted) return createPortal(<FAB onClick={() => setIsOpen(true)} />, document.body);
+  if (!isOpen) return null;
 
   if (isMinimized) return (
     <div className="fixed bottom-6 right-6 z-50">

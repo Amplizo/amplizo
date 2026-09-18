@@ -11,12 +11,19 @@ interface DashboardLayoutProps { children: React.ReactNode; title: string; subti
 export function DashboardLayout({ children, title, subtitle }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { agent } = useAuthStore();
+  const { agent, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   const isAdmin = agent?.role === "admin";
 
   useEffect(() => { setMounted(true); }, []);
+
+  const handleLogout = () => {
+    logout();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+  };
 
   // Map URL path to nav id (use current path immediately, fallback to dashboard default for /dashboard)
   const activeRoute = useMemo(() => {
@@ -68,7 +75,7 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
       {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       <div className={`fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
-        <Sidebar activeRoute={mounted ? activeRoute : ""} onNavigate={handleNavigate} />
+        <Sidebar activeRoute={mounted ? activeRoute : ""} onNavigate={handleNavigate} onLogout={handleLogout} />
       </div>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <DashboardHeader title={title} subtitle={subtitle} onMenuClick={() => setSidebarOpen(true)} />

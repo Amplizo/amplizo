@@ -1,9 +1,8 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Bell, LogOut, Moon, Sun, Menu, Search, X, Clock, AlertCircle, Info, UserPlus, MessageCircle, ShoppingCart, Users, MessageSquare, User, Check, Trash2 } from "lucide-react";
+import { Bell, Moon, Sun, Menu, Search, X, Clock, AlertCircle, Info, UserPlus, MessageCircle, ShoppingCart, Users, MessageSquare, User, Check, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useAuthStore, useUIStore } from "@/store";
 import { api } from "@/lib/api";
 
@@ -101,13 +100,9 @@ export function DashboardHeader({ title, subtitle, onMenuClick }: DashboardHeade
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleLogout = () => { setShowLogoutDialog(true); };
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -245,7 +240,7 @@ export function DashboardHeader({ title, subtitle, onMenuClick }: DashboardHeade
     <header className="sticky top-0 z-40 flex items-center justify-between px-4 md:px-6 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center gap-4">
         <button onClick={onMenuClick} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 lg:hidden"><Menu className="w-5 h-5" /></button>
-        <div className="hidden md:block"><h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h1>{subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}</div>
+        <div className="hidden md:block flex items-center"><h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h1>{subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}</div>
       </div>
 
       <div className="flex items-center gap-2 md:gap-3">
@@ -443,30 +438,8 @@ export function DashboardHeader({ title, subtitle, onMenuClick }: DashboardHeade
         <div className="flex items-center gap-2 pl-2 md:pl-3 border-l border-gray-200 dark:border-gray-700">
           <Avatar name={agent?.name || "Agent"} size="sm" />
           <div className="hidden md:block"><p className="text-sm font-medium text-gray-900 dark:text-gray-100">{agent?.name}</p><p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{agent?.role}</p></div>
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-500 ml-1"><LogOut className="w-5 h-5" /></Button>
         </div>
       </div>
-
-      <ConfirmDialog
-        isOpen={showLogoutDialog}
-        title="Logout"
-        message="Are you sure you want to logout?"
-        confirmText="Logout"
-        cancelText="Cancel"
-        isLoading={isLoggingOut}
-        onConfirm={async () => {
-          setIsLoggingOut(true);
-          try {
-            await logout();
-            if (typeof window !== "undefined") {
-              window.location.href = "/login";
-            }
-          } finally {
-            setIsLoggingOut(false);
-          }
-        }}
-        onCancel={() => setShowLogoutDialog(false)}
-      />
     </header>
   );
 }

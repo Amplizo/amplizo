@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuthStore } from "@/store";
 import api from "@/lib/api";
-import { Users, UserPlus, PhoneCall, Calendar, TrendingUp, TrendingDown, ArrowUpRight, Plus, X, Eye, Mail, Phone, MapPin, Clock, CheckCircle2, AlertCircle, XCircle, MessageCircle, Star, IndianRupee, Activity, Target, Zap, Award, Heart, ShoppingCart, BarChart3 } from "lucide-react";
+import { Users, UserPlus, PhoneCall, Calendar, TrendingUp, TrendingDown, ArrowUpRight, Plus, X, Eye, Mail, Phone, MapPin, Clock, CheckCircle2, AlertCircle, XCircle, MessageCircle, Star, IndianRupee, Activity, Target, Zap, Award, Heart, ShoppingCart, BarChart3, ChevronRight } from "lucide-react";
 import { AddCustomerModal } from "@/components/crm/AddCustomerModal";
 import { ScheduleCallModal } from "@/components/crm/ScheduleCallModal";
 import { SendWhatsAppModal } from "@/components/crm/SendWhatsAppModal";
@@ -165,7 +165,7 @@ export default function ClientDashboard() {
   };
 
   return (
-    <DashboardLayout title="My Dashboard" subtitle={`${getGreeting()}, ${agent?.name || "User"}!`}>
+    <DashboardLayout title="My Dashboard" subtitle={undefined}>
       {successMessage && (
         <div className="fixed top-20 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-green-500 text-white shadow-lg">
           <CheckCircle2 className="w-5 h-5" />
@@ -200,7 +200,7 @@ export default function ClientDashboard() {
               </div>
               <button
                 onClick={() => setShowAddCustomer(true)}
-                className="bg-white text-brand-700 hover:bg-white/95 backdrop-blur-sm rounded-xl p-3 flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
+                className="h-11 px-4 bg-white text-brand-700 hover:bg-white/95 backdrop-blur-sm rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg"
               >
                 <UserPlus className="w-5 h-5" />
                 <span className="font-bold text-base">Add Customer</span>
@@ -222,7 +222,10 @@ export default function ClientDashboard() {
               </div>
               <span className="text-xs text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full"><ArrowUpRight className="w-3 h-3" />{totalCustomers > 0 ? `${customerStats?.todayNew ?? 0} new` : "0"}</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalCustomers}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalCustomers}</p>
+              <ChevronRight className="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-600" aria-hidden="true" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">Total Customers</p>
           </Link>
           <Link
@@ -235,7 +238,10 @@ export default function ClientDashboard() {
               </div>
               <span className="text-xs text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full"><ArrowUpRight className="w-3 h-3" />Active</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activeCustomers}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{activeCustomers}</p>
+              <ChevronRight className="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-600" aria-hidden="true" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">Active</p>
           </Link>
           <Link
@@ -248,7 +254,10 @@ export default function ClientDashboard() {
               </div>
               <span className="text-xs text-purple-600 flex items-center gap-1 bg-purple-50 dark:bg-purple-900/20 px-2 py-1 rounded-full"><Star className="w-3 h-3" />VIP</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{vipCustomers}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{vipCustomers}</p>
+              <ChevronRight className="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-600" aria-hidden="true" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">VIP Customers</p>
           </Link>
           <Link
@@ -261,7 +270,10 @@ export default function ClientDashboard() {
               </div>
               <span className="text-xs text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-full">{pendingFollowups} pending</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalFollowUps}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalFollowUps}</p>
+              <ChevronRight className="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-600" aria-hidden="true" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">Follow-ups</p>
           </Link>
           <div className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-300">
@@ -271,7 +283,10 @@ export default function ClientDashboard() {
               </div>
               <span className="text-xs text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full"><ArrowUpRight className="w-3 h-3" />5%</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{avgRating}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{avgRating}</p>
+              <ChevronRight className="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-600" aria-hidden="true" />
+            </div>
             <p className="text-sm text-gray-500 mt-1">Avg Rating</p>
           </div>
         </div>
@@ -297,7 +312,7 @@ export default function ClientDashboard() {
                     const Icon = activity.icon;
                     return (
                       <div key={activity.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                        <div className={`p-2 rounded-lg ${getActivityColor(activity.color)}`}>
+                        <div className={`p-2.5 rounded-xl ${getActivityColor(activity.color)}`}>
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -345,13 +360,13 @@ export default function ClientDashboard() {
                   <button onClick={() => setShowAddCustomer(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
                     <Plus className="w-5 h-5" /><span className="font-medium">Add Customer</span>
                   </button>
-                  <button onClick={() => setShowScheduleCall(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                  <button onClick={() => setShowScheduleCall(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
                     <PhoneCall className="w-5 h-5" /><span className="font-medium">Schedule Call</span>
                   </button>
-                  <button onClick={() => setShowSendWhatsApp(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                  <button onClick={() => setShowSendWhatsApp(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
                     <MessageCircle className="w-5 h-5" /><span className="font-medium">Send WhatsApp</span>
                   </button>
-                  <button onClick={() => setShowSendEmail(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                  <button onClick={() => setShowSendEmail(true)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors">
                     <Mail className="w-5 h-5" /><span className="font-medium">Send Email</span>
                   </button>
                 </div>
